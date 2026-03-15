@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Contractor GO",
+    "slug": "contractor-go-v2",
+    "scheme": "contractorgo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.contractorgo.mobile"
+    },
+    "android": {
+      "package": "com.contractorgo.mobile",
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

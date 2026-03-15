@@ -1,0 +1,13 @@
+# 本地环境变量（含敏感信息，勿提交）
+.env
+.env.local
+.env.*.local
+
+# Supabase
+.branches
+.temp
+
+# dotenvx
+.env.keys
+.env.local
+.env.*.local
