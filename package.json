@@ -1,0 +1,8 @@
+{
+  "name": "contractor-go-v2",
+  "private": true,
+  "description": "Contractor GO v2 monorepo (mobile web build from root for Vercel)",
+  "scripts": {
+    "build:web": "cd mobile && npm install && npm run build:web"
+  }
+}
