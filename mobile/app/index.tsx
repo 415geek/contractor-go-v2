@@ -10,11 +10,12 @@ export default function IndexScreen() {
 
   if (!initialized || isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-900">
-        <ActivityIndicator color="#3B82F6" size="large" />
+      <View className="flex-1 items-center justify-center bg-surface-app">
+        <ActivityIndicator color="#2563EB" size="large" />
       </View>
     );
   }
 
-  return <Redirect href={session ? "/(tabs)" : "/(auth)/login"} />;
+  // 已登录 → 主界面，未登录 → 落地页
+  return <Redirect href={session ? "/(tabs)" : "/landing"} />;
 }

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -13,10 +14,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { useAuth } from "@/hooks/useAuth";
+import { useLang } from "@/lib/i18n";
+
+const LOGIN_LABELS = {
+  zh: { title: "登录 / 注册", sub: "短信验证码，安全快捷", btn: "获取验证码", retry: "s 后重试", regions: "支持：美国 +1 · 中国 +86 · 墨西哥 +52", incomplete: "手机号不完整", incompleteMsg: "请输入正确手机号", failTitle: "发送失败" },
+  en: { title: "Login / Sign up", sub: "SMS verification, fast & secure", btn: "Get Code", retry: "s retry", regions: "US +1 · China +86 · Mexico +52", incomplete: "Incomplete number", incompleteMsg: "Please enter a valid phone number", failTitle: "Failed to send" },
+  es: { title: "Iniciar sesión", sub: "Verificación por SMS, rápido y seguro", btn: "Obtener Código", retry: "s reintentar", regions: "EE.UU +1 · China +86 · México +52", incomplete: "Número incompleto", incompleteMsg: "Ingresa un número válido", failTitle: "Error al enviar" },
+} as const;
 
 export default function LoginScreen() {
   const sendOtp = useAuth((state) => state.sendOtp);
   const isLoading = useAuth((state) => state.isLoading);
+  const { lang } = useLang();
+  const L = LOGIN_LABELS[lang] ?? LOGIN_LABELS.zh;
 
   const [countryCode, setCountryCode] = useState("+1");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -33,7 +43,7 @@ export default function LoginScreen() {
 
   const handleSendOtp = async () => {
     if (phoneNumber.length < 8) {
-      Alert.alert("手机号不完整", "请输入正确手机号 / Ingresa un numero valido.");
+      Alert.alert(L.incomplete, L.incompleteMsg);
       return;
     }
     try {
@@ -41,8 +51,8 @@ export default function LoginScreen() {
       setCountdown(60);
       router.push({ pathname: "/(auth)/verify", params: { phone: fullPhone } });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "发送验证码失败。";
-      Alert.alert("发送失败", message);
+      const message = error instanceof Error ? error.message : L.failTitle;
+      Alert.alert(L.failTitle, message);
     }
   };
 
@@ -52,19 +62,30 @@ export default function LoginScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <View className="flex-1 px-5 pt-6 pb-8">
-          {/* Hero: 品牌 + 一句价值主张，避免首屏信息过载 */}
-          <View className="pt-4 pb-2">
+        <View className="flex-1 px-5 pt-4 pb-8">
+
+          {/* 返回落地页 */}
+          <Pressable
+            onPress={() => router.replace("/landing")}
+            className="flex-row items-center gap-1 mb-6 self-start active:opacity-70"
+            hitSlop={12}
+          >
+            <Ionicons name="chevron-back" size={18} color="#94A3B8" />
+            <Text className="text-slate-400 text-sm">Contractor GO</Text>
+          </Pressable>
+
+          {/* 标题 */}
+          <View className="mb-8">
             <Text className="text-[28px] font-bold tracking-tight text-white">
-              Contractor GO
+              {L.title}
             </Text>
-            <Text className="mt-2 text-base text-surface-border">
-              包工头的智能助手 · 短信验证码登录
+            <Text className="mt-1.5 text-base text-slate-400">
+              {L.sub}
             </Text>
           </View>
 
-          {/* 主操作区：电话输入 + 主按钮必须首屏可见 */}
-          <View className="mt-8 flex-1">
+          {/* 输入区 */}
+          <View className="flex-1">
             <PhoneInput
               countryCode={countryCode}
               phoneNumber={phoneNumber}
@@ -75,23 +96,22 @@ export default function LoginScreen() {
             <Pressable
               onPress={handleSendOtp}
               disabled={!canSubmit}
-              className="mt-6 min-h-touch items-center justify-center rounded-auth-button bg-primary-500 px-5 py-3.5 active:opacity-90 disabled:opacity-50"
-              style={({ pressed }) => (pressed && canSubmit ? { opacity: 0.9 } : undefined)}
+              className="mt-5 min-h-touch-xl items-center justify-center rounded-auth-button bg-primary-600 px-5 active:bg-primary-700 disabled:opacity-50"
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
                 <Text className="text-base font-semibold text-white">
-                  {countdown > 0 ? `${countdown}s 后重试` : "获取验证码"}
+                  {countdown > 0 ? `${countdown}${L.retry}` : L.btn}
                 </Text>
               )}
             </Pressable>
           </View>
 
-          {/* 支持地区：弱化放置底部，不抢主操作 */}
+          {/* 支持地区 */}
           <View className="mt-auto pt-4">
-            <Text className="text-center text-xs text-surface-border">
-              支持地区：美国 +1 · 中国 +86 · 墨西哥 +52
+            <Text className="text-center text-xs text-slate-600">
+              {L.regions}
             </Text>
           </View>
         </View>
