@@ -9,11 +9,11 @@ export default function TabsLayout() {
         tabBarActiveTintColor: "#3B82F6",
         tabBarInactiveTintColor: "#9CA3AF",
         tabBarStyle: {
-          backgroundColor: "#111827",
-          borderTopColor: "#1F2937",
+          backgroundColor: "#0F172A",
+          borderTopColor: "#1E293B",
         },
         sceneStyle: {
-          backgroundColor: "#111827",
+          backgroundColor: "#0F172A",
         },
       }}
     >

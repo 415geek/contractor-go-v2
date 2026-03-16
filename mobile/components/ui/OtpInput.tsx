@@ -14,23 +14,23 @@ export function OtpInput({
   onComplete,
   length = 6,
 }: OtpInputProps) {
-  const refs = useMemo(() => Array.from({ length }, () => createRef<TextInput>()), [length]);
+  const refs = useMemo(
+    () => Array.from({ length }, () => createRef<TextInput>()),
+    [length],
+  );
   const digits = Array.from({ length }, (_, index) => value[index] ?? "");
 
   const updateCode = (nextValue: string) => {
     const sanitized = nextValue.replace(/[^\d]/g, "").slice(0, length);
     onChange(sanitized);
-
-    if (sanitized.length === length) {
-      onComplete?.(sanitized);
-    }
+    if (sanitized.length === length) onComplete?.(sanitized);
   };
 
   return (
-    <View className="flex-row justify-between gap-2">
+    <View className="flex-row gap-2">
       {digits.map((digit, index) => (
         <TextInput
-          key={`${index}`}
+          key={index}
           ref={refs[index]}
           value={digit}
           onChangeText={(text) => {
@@ -39,13 +39,11 @@ export function OtpInput({
               refs[Math.min(length - 1, text.length - 1)].current?.focus();
               return;
             }
-
             const sanitizedText = text.replace(/[^\d]/g, "");
             const nextDigits = [...digits];
             nextDigits[index] = sanitizedText;
             const nextValue = nextDigits.join("").slice(0, length);
             updateCode(nextValue);
-
             if (sanitizedText && index < length - 1) {
               refs[index + 1].current?.focus();
             }
@@ -58,7 +56,10 @@ export function OtpInput({
           keyboardType="number-pad"
           maxLength={index === 0 ? length : 1}
           textAlign="center"
-          className="h-14 flex-1 rounded-xl border border-gray-700 bg-gray-800 text-xl font-semibold text-white"
+          placeholder="·"
+          placeholderTextColor="#475569"
+          className="h-14 flex-1 rounded-auth-input border border-surface-border bg-surface-card text-xl font-semibold text-white"
+          selectTextOnFocus
         />
       ))}
     </View>

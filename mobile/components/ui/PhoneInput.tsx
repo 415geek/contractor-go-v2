@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
-import { Modal, Pressable, Text, TextInput, View } from "react-native";
+import {
+  Modal,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+  type NativeSyntheticEvent,
+  type TextInputFocusEventData,
+} from "react-native";
 
 const COUNTRY_OPTIONS = [
   { code: "+1", label: "United States" },
@@ -21,38 +29,69 @@ export function PhoneInput({
   onPhoneNumberChange,
 }: PhoneInputProps) {
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const selectedCountry = useMemo(
     () => COUNTRY_OPTIONS.find((item) => item.code === countryCode) ?? COUNTRY_OPTIONS[0],
     [countryCode],
   );
 
+  const onFocus = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+    setIsFocused(true);
+  };
+  const onBlur = () => setIsFocused(false);
+
   return (
-    <View className="gap-3">
-      <Text className="text-sm text-gray-400">手机号 / Numero de telefono</Text>
-      <View className="flex-row items-center rounded-xl border border-gray-700 bg-gray-800 px-4 py-3">
-        <Pressable onPress={() => setIsModalVisible(true)} className="mr-3 rounded-lg bg-gray-700 px-3 py-2">
+    <View className="gap-2">
+      <Text className="text-sm font-medium text-white">手机号</Text>
+      <View
+        className={`flex-row items-center rounded-auth-input border bg-surface-card px-4 py-3 ${
+          isFocused ? "border-primary-500" : "border-surface-border"
+        }`}
+      >
+        <Pressable
+          onPress={() => setIsModalVisible(true)}
+          className="mr-3 min-h-[40px] min-w-[56px] items-center justify-center rounded-lg bg-surface-elevated px-3 py-2"
+          accessibilityLabel="选择国家区号"
+          accessibilityRole="button"
+        >
           <Text className="font-semibold text-white">{selectedCountry.code}</Text>
         </Pressable>
         <TextInput
           value={phoneNumber}
           onChangeText={(value) => onPhoneNumberChange(value.replace(/[^\d]/g, ""))}
+          onFocus={onFocus}
+          onBlur={onBlur}
           keyboardType="phone-pad"
-          placeholder="5551234567"
-          placeholderTextColor="#6B7280"
+          placeholder="请输入手机号"
+          placeholderTextColor="#64748B"
           className="flex-1 text-base text-white"
+          maxLength={15}
         />
-        {phoneNumber.length > 0 ? (
-          <Pressable onPress={() => onPhoneNumberChange("")} className="ml-3 rounded-lg bg-gray-700 px-3 py-2">
-            <Text className="font-semibold text-gray-200">Clear</Text>
+        {phoneNumber.length > 0 && (
+          <Pressable
+            onPress={() => onPhoneNumberChange("")}
+            className="ml-2 rounded-lg p-2"
+            accessibilityLabel="清空"
+            hitSlop={8}
+          >
+            <Text className="text-sm font-medium text-surface-border">清空</Text>
           </Pressable>
-        ) : null}
+        )}
       </View>
 
-      <Modal animationType="slide" transparent visible={isModalVisible} onRequestClose={() => setIsModalVisible(false)}>
-        <View className="flex-1 justify-end bg-black/60">
-          <View className="rounded-t-3xl bg-gray-900 p-6">
-            <Text className="mb-4 text-lg font-semibold text-white">选择区号 / Selecciona</Text>
+      <Modal
+        animationType="slide"
+        transparent
+        visible={isModalVisible}
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <Pressable
+          className="flex-1 justify-end bg-black/60"
+          onPress={() => setIsModalVisible(false)}
+        >
+          <View className="rounded-t-3xl bg-surface-card p-6 pb-8">
+            <Text className="mb-4 text-lg font-semibold text-white">选择区号</Text>
             {COUNTRY_OPTIONS.map((option) => (
               <Pressable
                 key={option.code}
@@ -60,18 +99,21 @@ export function PhoneInput({
                   onCountryCodeChange(option.code);
                   setIsModalVisible(false);
                 }}
-                className="mb-3 rounded-xl border border-gray-700 bg-gray-800 px-4 py-4"
+                className="mb-2 min-h-touch items-center justify-center rounded-xl bg-surface-elevated px-4 py-3"
               >
                 <Text className="text-base font-medium text-white">
                   {option.code} · {option.label}
                 </Text>
               </Pressable>
             ))}
-            <Pressable onPress={() => setIsModalVisible(false)} className="mt-2 rounded-xl bg-blue-500 px-4 py-4">
-              <Text className="text-center font-semibold text-white">完成</Text>
+            <Pressable
+              onPress={() => setIsModalVisible(false)}
+              className="mt-4 min-h-touch items-center justify-center rounded-auth-button bg-primary-500 px-4 py-3"
+            >
+              <Text className="font-semibold text-white">完成</Text>
             </Pressable>
           </View>
-        </View>
+        </Pressable>
       </Modal>
     </View>
   );

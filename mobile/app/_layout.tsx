@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { WebResponsiveWrapper } from "@/components/WebResponsiveWrapper";
 import { useAuth } from "@/hooks/useAuth";
 
 const queryClient = new QueryClient();
@@ -22,15 +23,17 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: "#111827" },
-          animation: "fade",
-        }}
-      />
-    </SafeAreaProvider>
+        <WebResponsiveWrapper>
+          <StatusBar style="light" />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: "#0F172A" },
+              animation: "fade",
+            }}
+          />
+        </WebResponsiveWrapper>
+      </SafeAreaProvider>
     </QueryClientProvider>
   );
 }

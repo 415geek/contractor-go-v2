@@ -1,10 +1,25 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, Pressable, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { OtpInput } from "@/components/ui/OtpInput";
 import { useAuth } from "@/hooks/useAuth";
+
+function maskPhone(phone: string): string {
+  if (!phone || phone.length < 6) return "***";
+  const digits = phone.replace(/\D/g, "");
+  const tail = digits.slice(-4);
+  return `···${tail}`;
+}
 
 export default function VerifyScreen() {
   const router = useRouter();
@@ -15,17 +30,12 @@ export default function VerifyScreen() {
 
   const [code, setCode] = useState("");
   const [countdown, setCountdown] = useState(60);
+  const masked = phone ? maskPhone(phone) : "";
 
   useEffect(() => {
-    if (countdown <= 0) {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setCountdown((current) => current - 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    if (countdown <= 0) return;
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
   }, [countdown]);
 
   const handleVerify = async (nextCode: string) => {
@@ -33,7 +43,6 @@ export default function VerifyScreen() {
       Alert.alert("缺少手机号", "请返回上一步重新输入手机号。");
       return;
     }
-
     try {
       await verifyOtp(phone, nextCode);
       router.replace("/(tabs)");
@@ -45,10 +54,7 @@ export default function VerifyScreen() {
   };
 
   const handleResend = async () => {
-    if (!phone) {
-      return;
-    }
-
+    if (!phone) return;
     try {
       await sendOtp(phone);
       setCountdown(60);
@@ -60,55 +66,64 @@ export default function VerifyScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-900">
-      <View className="flex-1 px-6 py-10">
-        <Pressable onPress={() => router.back()} className="self-start rounded-lg bg-gray-800 px-4 py-2">
-          <Text className="font-medium text-white">返回</Text>
-        </Pressable>
-
-        <View className="mt-12 gap-3">
-          <Text className="text-3xl font-bold text-white">输入验证码</Text>
-          <Text className="text-sm leading-6 text-gray-400">
-            验证码已发送到 {phone ?? "你的手机"}.{"\n"}
-            Ingresa el codigo de 6 digitos recibido por SMS.
-          </Text>
-        </View>
-
-        <View className="mt-10 gap-6">
-          <OtpInput
-            value={code}
-            onChange={setCode}
-            onComplete={(nextCode: string) => {
-              void handleVerify(nextCode);
-            }}
-          />
-
+    <SafeAreaView className="flex-1 bg-surface-app" edges={["top"]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        className="flex-1"
+      >
+        <View className="flex-1 px-5 pt-4 pb-8">
           <Pressable
-            onPress={() => {
-              void handleVerify(code);
-            }}
-            disabled={isLoading || code.length !== 6}
-            className={`rounded-xl px-5 py-4 ${isLoading || code.length !== 6 ? "bg-blue-300" : "bg-blue-500"}`}
+            onPress={() => router.back()}
+            className="self-start rounded-lg py-2 pr-2 -ml-2"
+            accessibilityLabel="返回"
+            accessibilityRole="button"
           >
-            <Text className="text-center text-base font-semibold text-white">验证并登录</Text>
+            <Text className="text-base font-medium text-primary-500">← 返回</Text>
           </Pressable>
-        </View>
 
-        <View className="mt-auto gap-3">
-          <Text className="text-center text-sm text-gray-400">
-            {countdown > 0 ? `${countdown}s 后可重新发送` : "没有收到验证码？"}
-          </Text>
-          <Pressable
-            onPress={() => {
-              void handleResend();
-            }}
-            disabled={countdown > 0 || isLoading}
-            className={`rounded-xl border border-gray-700 px-5 py-4 ${countdown > 0 || isLoading ? "bg-gray-800" : "bg-gray-800/50"}`}
-          >
-            <Text className="text-center text-base font-semibold text-white">重新发送验证码</Text>
-          </Pressable>
+          <View className="mt-8">
+            <Text className="text-2xl font-bold tracking-tight text-white">
+              输入验证码
+            </Text>
+            <Text className="mt-2 text-sm leading-5 text-surface-border">
+              验证码已发送至 {masked}，请查收短信后输入 6 位数字
+            </Text>
+          </View>
+
+          <View className="mt-8">
+            <OtpInput
+              value={code}
+              onChange={setCode}
+              onComplete={(nextCode: string) => void handleVerify(nextCode)}
+            />
+
+            <Pressable
+              onPress={() => void handleVerify(code)}
+              disabled={isLoading || code.length !== 6}
+              className="mt-6 min-h-touch items-center justify-center rounded-auth-button bg-primary-500 px-5 py-3.5 disabled:opacity-50"
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text className="text-base font-semibold text-white">验证并登录</Text>
+              )}
+            </Pressable>
+          </View>
+
+          <View className="mt-auto gap-3 pt-8">
+            <Text className="text-center text-sm text-surface-border">
+              {countdown > 0 ? `${countdown}s 后可重新发送` : "没收到验证码？"}
+            </Text>
+            <Pressable
+              onPress={() => void handleResend()}
+              disabled={countdown > 0 || isLoading}
+              className="min-h-touch items-center justify-center rounded-auth-button border border-surface-border bg-surface-card px-5 py-3.5 disabled:opacity-50"
+            >
+              <Text className="text-base font-semibold text-white">重新发送验证码</Text>
+            </Pressable>
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
