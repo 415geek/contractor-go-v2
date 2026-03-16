@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-expo";
 
 type SettingRow = {
   icon: string;
@@ -54,14 +54,17 @@ function SettingItem({ row }: { row: SettingRow }) {
 }
 
 export default function ProfileScreen() {
-  const user = useAuth((state) => state.user);
-  const signOut = useAuth((state) => state.signOut);
+  const { signOut } = useClerkAuth();
+  const { user } = useUser();
 
-  const phone = user?.phone ?? "未登录";
+  const phone =
+    user?.phoneNumbers[0]?.phoneNumber ??
+    user?.primaryEmailAddress?.emailAddress ??
+    "未登录";
   const displayPhone = phone.replace(/(\+\d{1,2})(\d{3})(\d{3})(\d+)/, "$1 $2-$3-$4");
 
   async function handleSignOut() {
-    await signOut();
+    await signOut!();
     router.replace("/(auth)/login");
   }
 
