@@ -168,10 +168,10 @@ export default function LandingScreen() {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-app" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-surface-app" edges={["top"]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: 16 }}
       >
         {/* ── 顶部栏：Logo + 语言切换 ── */}
         <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
