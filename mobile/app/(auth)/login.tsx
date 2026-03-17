@@ -169,10 +169,18 @@ export default function LoginScreen() {
       try {
         const flow = provider === "google" ? startGoogle : startGitHub;
         const redirectUrl = AuthSession.makeRedirectUri({ scheme: "contractorgo" });
-        const { createdSessionId, setActive } = await flow({ redirectUrl });
+        const { createdSessionId, setActive, signUp } = await flow({ redirectUrl });
         if (createdSessionId && setActive) {
+          // Existing user: session created directly
           await setActive({ session: createdSessionId });
           router.replace("/(tabs)");
+        } else if (signUp?.status === "complete" && signUp.createdSessionId && setActive) {
+          // New user: sign-up completed via OAuth
+          await setActive({ session: signUp.createdSessionId });
+          router.replace("/(tabs)");
+        } else if (!createdSessionId) {
+          // OAuth flow returned without a session (cancelled or incomplete)
+          Alert.alert(L.failTitle, provider === "google" ? "Google 登录未完成，请重试" : "GitHub 登录未完成，请重试");
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : L.failTitle;
