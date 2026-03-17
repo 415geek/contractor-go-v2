@@ -252,7 +252,7 @@ export default function LandingScreen() {
             </View>
 
             {/* 社会认同 */}
-            <View className="rounded-xl border border-primary-500/30 bg-primary-500/10 p-4 mb-6">
+            <View className="rounded-xl border border-primary-500/30 bg-primary-500/10 p-4 mb-4">
               <View className="flex-row items-start gap-3">
                 <View className="w-10 h-10 rounded-full bg-primary-700 items-center justify-center flex-shrink-0">
                   <Text className="text-white font-bold">张</Text>
@@ -270,34 +270,29 @@ export default function LandingScreen() {
                 </View>
               </View>
             </View>
+
+            {/* ── CTA 按钮 ── */}
+            <Pressable
+              onPress={() => router.push("/(auth)/login")}
+              className="min-h-touch-xl items-center justify-center rounded-xl bg-primary-600 active:bg-primary-700 mb-3"
+              style={{
+                shadowColor: "#2563EB",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.4,
+                shadowRadius: 12,
+              }}
+            >
+              <Text className="text-white font-bold text-base">{t.startBtn}</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.push("/(auth)/login")}
+              className="min-h-touch items-center justify-center rounded-xl border border-slate-700 active:bg-surface-elevated"
+            >
+              <Text className="text-slate-300 text-sm">{t.loginBtn}</Text>
+            </Pressable>
           </View>
         </Animated.View>
       </ScrollView>
-
-      {/* ── 底部固定 CTA ── */}
-      <View className="px-5 pt-3 pb-4 border-t border-slate-800 bg-surface-app">
-        {/* 主按钮：开始使用 */}
-        <Pressable
-          onPress={() => router.push("/(auth)/login")}
-          className="min-h-touch-xl items-center justify-center rounded-xl bg-primary-600 active:bg-primary-700 mb-3"
-          style={{
-            shadowColor: "#2563EB",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.4,
-            shadowRadius: 12,
-          }}
-        >
-          <Text className="text-white font-bold text-base">{t.startBtn}</Text>
-        </Pressable>
-
-        {/* 次按钮：已有账号 */}
-        <Pressable
-          onPress={() => router.push("/(auth)/login")}
-          className="min-h-touch items-center justify-center rounded-xl border border-slate-700 active:bg-surface-elevated"
-        >
-          <Text className="text-slate-300 text-sm">{t.loginBtn}</Text>
-        </Pressable>
-      </View>
     </SafeAreaView>
   );
 }
