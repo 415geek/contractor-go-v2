@@ -1,3 +1,4 @@
+import { useSignIn, useSignUp } from "@clerk/clerk-expo";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -12,7 +13,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { OtpInput } from "@/components/ui/OtpInput";
-import { useAuth } from "@/hooks/useAuth";
+
+type VerifyFlow = "sign-in" | "sign-up-phone" | "sign-up-email";
 
 function maskPhone(phone: string): string {
   if (!phone || phone.length < 6) return "***";
@@ -23,14 +25,21 @@ function maskPhone(phone: string): string {
 
 export default function VerifyScreen() {
   const router = useRouter();
-  const { phone } = useLocalSearchParams<{ phone?: string }>();
-  const sendOtp = useAuth((state) => state.sendOtp);
-  const verifyOtp = useAuth((state) => state.verifyOtp);
-  const isLoading = useAuth((state) => state.isLoading);
+  const { phone, email, flow } = useLocalSearchParams<{
+    phone?: string;
+    email?: string;
+    flow?: VerifyFlow;
+  }>();
+
+  const { signIn, setActive: setActiveSignIn, isLoaded: signInLoaded } = useSignIn();
+  const { signUp, setActive: setActiveSignUp, isLoaded: signUpLoaded } = useSignUp();
 
   const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(60);
-  const masked = phone ? maskPhone(phone) : "";
+
+  const masked = phone ? maskPhone(phone) : email ?? "";
+  const isPhone = flow !== "sign-up-email";
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -39,29 +48,64 @@ export default function VerifyScreen() {
   }, [countdown]);
 
   const handleVerify = async (nextCode: string) => {
-    if (!phone) {
-      Alert.alert("缺少手机号", "请返回上一步重新输入手机号。");
-      return;
-    }
+    if (!signInLoaded || !signUpLoaded) return;
+    setLoading(true);
     try {
-      await verifyOtp(phone, nextCode);
-      router.replace("/(tabs)");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "验证码验证失败。";
+      if (flow === "sign-in") {
+        const result = await signIn!.attemptFirstFactor({
+          strategy: "phone_code",
+          code: nextCode,
+        });
+        if (result.status === "complete") {
+          await setActiveSignIn!({ session: result.createdSessionId! });
+          router.replace("/(tabs)");
+        }
+      } else if (flow === "sign-up-phone") {
+        const result = await signUp!.attemptPhoneNumberVerification({ code: nextCode });
+        if (result.status === "complete") {
+          await setActiveSignUp!({ session: result.createdSessionId! });
+          router.replace("/(tabs)");
+        }
+      } else {
+        const result = await signUp!.attemptEmailAddressVerification({ code: nextCode });
+        if (result.status === "complete") {
+          await setActiveSignUp!({ session: result.createdSessionId! });
+          router.replace("/(tabs)");
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "验证码验证失败。";
       Alert.alert("验证失败", message);
       setCode("");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleResend = async () => {
-    if (!phone) return;
+    if (!signInLoaded || !signUpLoaded) return;
+    setLoading(true);
     try {
-      await sendOtp(phone);
+      if (flow === "sign-in" && phone) {
+        const factor = signIn!.supportedFirstFactors?.find(
+          (f) => f.strategy === "phone_code"
+        );
+        await signIn!.prepareFirstFactor({
+          strategy: "phone_code",
+          phoneNumberId: (factor as any)?.phoneNumberId ?? "",
+        });
+      } else if (flow === "sign-up-phone") {
+        await signUp!.preparePhoneNumberVerification({ strategy: "phone_code" });
+      } else {
+        await signUp!.prepareEmailAddressVerification({ strategy: "email_code" });
+      }
       setCountdown(60);
       setCode("");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "重发失败。";
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "重发失败。";
       Alert.alert("发送失败", message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -86,7 +130,9 @@ export default function VerifyScreen() {
               输入验证码
             </Text>
             <Text className="mt-2 text-sm leading-5 text-surface-border">
-              验证码已发送至 {masked}，请查收短信后输入 6 位数字
+              {isPhone
+                ? `验证码已发送至 ${masked}，请查收短信后输入 6 位数字`
+                : `验证码已发送至 ${masked}，请查收邮件后输入 6 位数字`}
             </Text>
           </View>
 
@@ -99,10 +145,10 @@ export default function VerifyScreen() {
 
             <Pressable
               onPress={() => void handleVerify(code)}
-              disabled={isLoading || code.length !== 6}
+              disabled={loading || code.length !== 6}
               className="mt-6 min-h-touch items-center justify-center rounded-auth-button bg-primary-500 px-5 py-3.5 disabled:opacity-50"
             >
-              {isLoading ? (
+              {loading ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
                 <Text className="text-base font-semibold text-white">验证并登录</Text>
@@ -116,7 +162,7 @@ export default function VerifyScreen() {
             </Text>
             <Pressable
               onPress={() => void handleResend()}
-              disabled={countdown > 0 || isLoading}
+              disabled={countdown > 0 || loading}
               className="min-h-touch items-center justify-center rounded-auth-button border border-surface-border bg-surface-card px-5 py-3.5 disabled:opacity-50"
             >
               <Text className="text-base font-semibold text-white">重新发送验证码</Text>

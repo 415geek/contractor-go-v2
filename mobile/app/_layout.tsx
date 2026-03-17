@@ -1,39 +1,58 @@
 import "../global.css";
 
+import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
+import { tokenCache } from "@/lib/clerk-token-cache";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { WebResponsiveWrapper } from "@/components/WebResponsiveWrapper";
-import { useAuth } from "@/hooks/useAuth";
 
 const queryClient = new QueryClient();
 
-export default function RootLayout() {
-  const initialize = useAuth((state) => state.initialize);
+function RootNavigator() {
+  const { isSignedIn, isLoaded } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
 
   useEffect(() => {
-    initialize().catch((error: unknown) => {
-      console.error("Failed to initialize auth state", error);
-    });
-  }, [initialize]);
+    if (!isLoaded) return;
+    const inAuthGroup = segments[0] === "(auth)";
+    const inLanding = segments[0] === "landing";
+    if (isSignedIn && inAuthGroup) {
+      router.replace("/(tabs)");
+    } else if (!isSignedIn && !inAuthGroup && !inLanding) {
+      router.replace("/landing");
+    }
+  }, [isSignedIn, isLoaded, segments]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <WebResponsiveWrapper>
-          <StatusBar style="light" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: "#0F172A" },
-              animation: "fade",
-            }}
-          />
-        </WebResponsiveWrapper>
-      </SafeAreaProvider>
-    </QueryClientProvider>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: "#0F172A" },
+        animation: "fade",
+      }}
+    />
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ClerkProvider
+      publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+      tokenCache={tokenCache}
+    >
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <WebResponsiveWrapper>
+            <StatusBar style="light" />
+            <RootNavigator />
+          </WebResponsiveWrapper>
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </ClerkProvider>
   );
 }

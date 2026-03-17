@@ -1,19 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useClerk } from "@clerk/nextjs";
 import { ChevronDown, LogOut, User } from "lucide-react";
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
-  const supabase = createClient();
+  const { signOut } = useClerk();
 
   async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+    await signOut({ redirectUrl: "/login" });
   }
 
   return (
