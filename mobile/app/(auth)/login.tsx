@@ -2,6 +2,7 @@
 
 import { useOAuth, useSignIn, useSignUp } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
+import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
@@ -167,7 +168,8 @@ export default function LoginScreen() {
       setLoading(true);
       try {
         const flow = provider === "google" ? startGoogle : startGitHub;
-        const { createdSessionId, setActive } = await flow();
+        const redirectUrl = AuthSession.makeRedirectUri({ scheme: "contractorgo" });
+        const { createdSessionId, setActive } = await flow({ redirectUrl });
         if (createdSessionId && setActive) {
           await setActive({ session: createdSessionId });
           router.replace("/(tabs)");
