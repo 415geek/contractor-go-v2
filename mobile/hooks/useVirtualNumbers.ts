@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@clerk/clerk-expo";
 
 import { fetchAvailableNumbers } from "@/lib/api/voip";
 import { supabase } from "@/lib/supabase";
@@ -21,11 +22,11 @@ export type AvailableDid = {
   ratecenter: string;
 };
 
-async function fetchMyNumbers(): Promise<VirtualNumber[]> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error("Not authenticated");
+async function fetchMyNumbers(getToken: () => Promise<string | null>): Promise<VirtualNumber[]> {
+  const token = await getToken();
+  if (!token) throw new Error("Not authenticated");
   const { data, error } = await supabase.functions.invoke<{ data: VirtualNumber[]; error: string | null }>("voip-my-numbers", {
-    headers: { Authorization: `Bearer ${session.access_token}` },
+    headers: { Authorization: `Bearer ${token}` },
   });
   if (error) throw error;
   if (data?.error) throw new Error(data.error as string);
@@ -36,12 +37,16 @@ async function searchAvailableNumbers(params: { area_code?: string; state?: stri
   return fetchAvailableNumbers(params);
 }
 
-async function purchaseNumber(did: string, monthly?: string): Promise<VirtualNumber> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error("Not authenticated");
+async function purchaseNumber(
+  getToken: () => Promise<string | null>,
+  did: string,
+  monthly?: string,
+): Promise<VirtualNumber> {
+  const token = await getToken();
+  if (!token) throw new Error("Not authenticated");
   const { data, error } = await supabase.functions.invoke<{ data: VirtualNumber; error: string | null }>("voip-purchase-number", {
     method: "POST",
-    headers: { Authorization: `Bearer ${session.access_token}` },
+    headers: { Authorization: `Bearer ${token}` },
     body: { did, monthly },
   });
   if (error) throw error;
@@ -52,15 +57,16 @@ async function purchaseNumber(did: string, monthly?: string): Promise<VirtualNum
 
 export function useVirtualNumbers() {
   const qc = useQueryClient();
+  const { getToken } = useAuth();
   const query = useQuery({
     queryKey: ["virtualNumbers"],
-    queryFn: fetchMyNumbers,
+    queryFn: () => fetchMyNumbers(getToken),
   });
   const searchMutation = useMutation({
     mutationFn: searchAvailableNumbers,
   });
   const purchaseMutation = useMutation({
-    mutationFn: ({ did, monthly }: { did: string; monthly?: string }) => purchaseNumber(did, monthly),
+    mutationFn: ({ did, monthly }: { did: string; monthly?: string }) => purchaseNumber(getToken, did, monthly),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["virtualNumbers"] }),
   });
   return {
