@@ -48,7 +48,7 @@ export default function ProjectDetailScreen() {
         </Pressable>
         <View className="mt-8 rounded-xl bg-red-900/20 p-4">
           <Text className="text-red-400">
-            {error ? String(error) : "项目不存在"}
+            {error ? (error instanceof Error ? error.message : (error as { message?: string })?.message ?? String(error)) : "项目不存在"}
           </Text>
         </View>
       </View>

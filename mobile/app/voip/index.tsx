@@ -31,7 +31,7 @@ export default function VoipIndexScreen() {
       </View>
       {error && (
         <View className="p-4 bg-red-900/30 mx-4 mt-4 rounded-lg">
-          <Text className="text-red-400">{String(error)}</Text>
+          <Text className="text-red-400">{error instanceof Error ? error.message : (error as { message?: string })?.message ?? "Unknown error"}</Text>
         </View>
       )}
       {numbers.length === 0 ? (
