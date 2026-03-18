@@ -85,7 +85,7 @@ export default function MessagesIndexScreen() {
       {/* 错误提示 */}
       {error && (
         <View className="mx-4 mb-3 px-4 py-3 bg-error-500/20 rounded-xl border border-error-500/30">
-          <Text className="text-error-500 text-sm">{String(error)}</Text>
+          <Text className="text-error-500 text-sm">{error instanceof Error ? error.message : (error as { message?: string })?.message ?? "Unknown error"}</Text>
         </View>
       )}
 

@@ -1,6 +1,7 @@
+import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { supabase } from "@/lib/supabase";
+import { createAuthenticatedClient } from "@/lib/supabase";
 
 export type ProjectStatus = "planning" | "active" | "on_hold" | "completed" | "cancelled";
 
@@ -45,43 +46,46 @@ export type ProjectInsert = {
   notes?: string | null;
 };
 
-async function getProjects(status?: ProjectStatus): Promise<Project[]> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user?.id) throw new Error("Not authenticated");
-  let q = supabase
+async function getProjects(getToken: () => Promise<string | null>, userId: string, status?: ProjectStatus): Promise<Project[]> {
+  const token = await getToken();
+  if (!token || !userId) throw new Error("Not authenticated");
+  const client = createAuthenticatedClient(token);
+  let q = client
     .from("projects")
     .select("*")
-    .eq("user_id", session.user.id)
+    .eq("user_id", userId)
     .order("start_date", { ascending: false, nullsFirst: false });
   if (status) q = q.eq("status", status);
   const { data, error } = await q;
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return (data ?? []) as Project[];
 }
 
-async function getProject(id: string): Promise<Project | null> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user?.id) throw new Error("Not authenticated");
-  const { data, error } = await supabase
+async function getProject(getToken: () => Promise<string | null>, userId: string, id: string): Promise<Project | null> {
+  const token = await getToken();
+  if (!token || !userId) throw new Error("Not authenticated");
+  const client = createAuthenticatedClient(token);
+  const { data, error } = await client
     .from("projects")
     .select("*")
     .eq("id", id)
-    .eq("user_id", session.user.id)
+    .eq("user_id", userId)
     .single();
   if (error) {
     if (error.code === "PGRST116") return null;
-    throw error;
+    throw new Error(error.message);
   }
   return data as Project;
 }
 
-async function createProject(row: ProjectInsert): Promise<Project> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user?.id) throw new Error("Not authenticated");
-  const { data, error } = await supabase
+async function createProject(getToken: () => Promise<string | null>, userId: string, row: ProjectInsert): Promise<Project> {
+  const token = await getToken();
+  if (!token || !userId) throw new Error("Not authenticated");
+  const client = createAuthenticatedClient(token);
+  const { data, error } = await client
     .from("projects")
     .insert({
-      user_id: session.user.id,
+      user_id: userId,
       name: row.name,
       address: row.address ?? null,
       client_name: row.client_name ?? null,
@@ -99,58 +103,63 @@ async function createProject(row: ProjectInsert): Promise<Project> {
     })
     .select()
     .single();
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return data as Project;
 }
 
-async function updateProject(id: string, row: Partial<ProjectInsert>): Promise<Project> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user?.id) throw new Error("Not authenticated");
-  const { data, error } = await supabase
+async function updateProject(getToken: () => Promise<string | null>, userId: string, id: string, row: Partial<ProjectInsert>): Promise<Project> {
+  const token = await getToken();
+  if (!token || !userId) throw new Error("Not authenticated");
+  const client = createAuthenticatedClient(token);
+  const { data, error } = await client
     .from("projects")
     .update({
       ...row,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
-    .eq("user_id", session.user.id)
+    .eq("user_id", userId)
     .select()
     .single();
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return data as Project;
 }
 
-async function deleteProject(id: string): Promise<void> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user?.id) throw new Error("Not authenticated");
-  const { error } = await supabase
+async function deleteProject(getToken: () => Promise<string | null>, userId: string, id: string): Promise<void> {
+  const token = await getToken();
+  if (!token || !userId) throw new Error("Not authenticated");
+  const client = createAuthenticatedClient(token);
+  const { error } = await client
     .from("projects")
     .delete()
     .eq("id", id)
-    .eq("user_id", session.user.id);
-  if (error) throw error;
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
 }
 
 export function useProjects(status?: ProjectStatus) {
   const qc = useQueryClient();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
   const query = useQuery({
     queryKey: ["projects", status ?? "all"],
-    queryFn: () => getProjects(status),
+    queryFn: () => getProjects(getToken, user?.id ?? "", status),
+    enabled: isLoaded && !!isSignedIn && !!user?.id,
   });
   const createMutation = useMutation({
-    mutationFn: createProject,
+    mutationFn: (row: ProjectInsert) => createProject(getToken, user!.id, row),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["projects"] });
     },
   });
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...rest }: { id: string } & Partial<ProjectInsert>) => updateProject(id, rest),
+    mutationFn: ({ id, ...rest }: { id: string } & Partial<ProjectInsert>) => updateProject(getToken, user!.id, id, rest),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["projects"] });
     },
   });
   const deleteMutation = useMutation({
-    mutationFn: deleteProject,
+    mutationFn: (id: string) => deleteProject(getToken, user!.id, id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["projects"] });
     },
@@ -170,10 +179,12 @@ export function useProjects(status?: ProjectStatus) {
 }
 
 export function useProject(id: string | undefined) {
+  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
   const query = useQuery({
     queryKey: ["project", id],
-    queryFn: () => (id ? getProject(id) : Promise.resolve(null)),
-    enabled: !!id,
+    queryFn: () => (id ? getProject(getToken, user?.id ?? "", id) : Promise.resolve(null)),
+    enabled: isLoaded && !!isSignedIn && !!user?.id && !!id,
   });
   return {
     project: query.data ?? null,

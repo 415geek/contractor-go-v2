@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useAuth } from "@clerk/clerk-expo";
 
 import { supabase } from "@/lib/supabase";
 
@@ -28,6 +29,7 @@ export function useHouseEstimate() {
   const [isEstimating, setIsEstimating] = useState(false);
   const [result, setResult] = useState<HouseEstimateResult | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const { getToken } = useAuth();
 
   const estimateHouse = useCallback(async (imageUrls: string[]) => {
     if (imageUrls.length === 0) return;
@@ -35,14 +37,14 @@ export function useHouseEstimate() {
     setError(null);
     setResult(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Not authenticated");
+      const token = await getToken();
+      if (!token) throw new Error("Not authenticated");
       const { data, error: fnError } = await supabase.functions.invoke<{
         data?: HouseEstimateResult;
         error?: string;
       }>("estimate-house", {
         method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${token}` },
         body: { image_urls: imageUrls },
       });
       if (fnError) throw fnError;
@@ -55,7 +57,7 @@ export function useHouseEstimate() {
     } finally {
       setIsEstimating(false);
     }
-  }, []);
+  }, [getToken]);
 
   const retrySegment = useCallback(async (_segmentId: string, _imageUrls: string[]) => {
     await estimateHouse(_imageUrls);

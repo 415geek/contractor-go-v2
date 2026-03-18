@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useAuth } from "@clerk/clerk-expo";
 
 import { supabase } from "@/lib/supabase";
 
@@ -33,6 +34,7 @@ export function usePermitSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [result, setResult] = useState<PermitSearchResult | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const { getToken } = useAuth();
 
   const searchPermit = useCallback(async (address: string) => {
     const trimmed = address.trim();
@@ -41,15 +43,15 @@ export function usePermitSearch() {
     setError(null);
     setResult(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("Not authenticated");
+      const token = await getToken();
+      if (!token) throw new Error("Not authenticated");
       const { data, error: fnError } = await supabase.functions.invoke<{
         data?: PermitSearchResult & { city?: string };
         error?: string;
         supported_cities?: string[];
       }>("search-permit", {
         method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${token}` },
         body: { address: trimmed },
       });
       if (data?.error === "unsupported_city") {
@@ -66,7 +68,7 @@ export function usePermitSearch() {
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [getToken]);
 
   return {
     searchPermit,
