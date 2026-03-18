@@ -385,3 +385,47 @@ s3_region = "env(S3_REGION)"
 s3_access_key = "env(S3_ACCESS_KEY)"
 # Configures AWS_SECRET_ACCESS_KEY for S3 bucket
 s3_secret_key = "env(S3_SECRET_KEY)"
+
+# Disable Supabase JWT verification for all functions — auth is handled via
+# Clerk JWT decoding in _shared/get-user.ts.
+[functions.send-message]
+verify_jwt = false
+
+[functions.estimate-house]
+verify_jwt = false
+
+[functions.search-permit]
+verify_jwt = false
+
+[functions.search-material]
+verify_jwt = false
+
+[functions.parse-project]
+verify_jwt = false
+
+[functions.generate-plan]
+verify_jwt = false
+
+[functions.translate]
+verify_jwt = false
+
+[functions.send-otp]
+verify_jwt = false
+
+[functions.verify-otp]
+verify_jwt = false
+
+[functions.voip-available-numbers]
+verify_jwt = false
+
+[functions.voip-my-numbers]
+verify_jwt = false
+
+[functions.voip-purchase-number]
+verify_jwt = false
+
+[functions.voip-rate-centers]
+verify_jwt = false
+
+[functions.voip-webhook]
+verify_jwt = false
