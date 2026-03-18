@@ -57,10 +57,11 @@ async function purchaseNumber(
 
 export function useVirtualNumbers() {
   const qc = useQueryClient();
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const query = useQuery({
     queryKey: ["virtualNumbers"],
     queryFn: () => fetchMyNumbers(getToken),
+    enabled: isLoaded && !!isSignedIn,
   });
   const searchMutation = useMutation({
     mutationFn: searchAvailableNumbers,

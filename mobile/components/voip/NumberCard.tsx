@@ -17,7 +17,7 @@ export function NumberCard({ did, monthly = "0", status = "active", onAction, ac
         <Text className="text-white font-mono text-lg">{did}</Text>
         <View className="flex-row items-center gap-2 mt-1">
           <View className={`px-2 py-0.5 rounded ${badgeColor}`}>
-            <Text className="text-white text-xs">{isActive ? "active" : status}</Text>
+            <Text className="text-white text-xs">{status}</Text>
           </View>
           <Text className="text-gray-400 text-sm">${monthly}/月</Text>
         </View>
