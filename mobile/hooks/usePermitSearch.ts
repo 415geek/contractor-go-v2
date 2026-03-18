@@ -35,7 +35,7 @@ export function usePermitSearch() {
   const [result, setResult] = useState<PermitSearchResult | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const { getToken: _getToken } = useAuth();
-  const getToken = () => _getToken({ template: 'supabase' });
+  const getToken = () => _getToken();
 
   const searchPermit = useCallback(async (address: string) => {
     const trimmed = address.trim();

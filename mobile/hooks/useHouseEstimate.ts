@@ -30,7 +30,7 @@ export function useHouseEstimate() {
   const [result, setResult] = useState<HouseEstimateResult | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const { getToken: _getToken } = useAuth();
-  const getToken = () => _getToken({ template: 'supabase' });
+  const getToken = () => _getToken();
 
   const estimateHouse = useCallback(async (imageUrls: string[]) => {
     if (imageUrls.length === 0) return;
