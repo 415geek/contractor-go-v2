@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
       .from("virtual_numbers")
       .insert({
         user_id: user.id,
-        phone_number,
+        phone_number: phoneNumber,
         provider: "voipms",
         status: "active",
         metadata: { monthly_cost: monthly },

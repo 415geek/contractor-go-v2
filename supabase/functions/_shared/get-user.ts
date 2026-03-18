@@ -18,5 +18,15 @@ export async function getUserFromRequest(req: Request): Promise<User | null> {
   );
   const { data: { user }, error } = await client.auth.getUser(token);
   if (error || !user) return null;
+
+  // Ensure a row exists in public.users for this Clerk user.
+  // On first sign-in via Clerk, no row exists yet — upsert it.
+  await client
+    .from("users")
+    .upsert(
+      { id: user.id, email: user.email ?? null },
+      { onConflict: "id", ignoreDuplicates: true },
+    );
+
   return user;
 }
