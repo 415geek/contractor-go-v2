@@ -40,7 +40,7 @@ type Mode = "manual" | "ai";
 export default function CreateProjectScreen() {
   const router = useRouter();
   const { getToken: _getToken } = useAuth();
-  const getToken = () => _getToken({ template: 'supabase' });
+  const getToken = () => _getToken();
   const { create, createLoading } = useProjects();
   const [mode, setMode] = useState<Mode>("manual");
   const [name, setName] = useState("");
