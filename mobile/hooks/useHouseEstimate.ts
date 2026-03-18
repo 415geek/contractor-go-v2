@@ -29,7 +29,8 @@ export function useHouseEstimate() {
   const [isEstimating, setIsEstimating] = useState(false);
   const [result, setResult] = useState<HouseEstimateResult | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const { getToken } = useAuth();
+  const { getToken: _getToken } = useAuth();
+  const getToken = () => _getToken({ template: 'supabase' });
 
   const estimateHouse = useCallback(async (imageUrls: string[]) => {
     if (imageUrls.length === 0) return;
@@ -57,7 +58,7 @@ export function useHouseEstimate() {
     } finally {
       setIsEstimating(false);
     }
-  }, [getToken]);
+  }, [_getToken]);
 
   const retrySegment = useCallback(async (_segmentId: string, _imageUrls: string[]) => {
     await estimateHouse(_imageUrls);

@@ -44,7 +44,8 @@ async function sendMessage(getToken: () => Promise<string | null>, conversationI
 
 export function useMessages(conversationId: string | null) {
   const qc = useQueryClient();
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { getToken: _getToken, isLoaded, isSignedIn } = useAuth();
+  const getToken = () => _getToken({ template: 'supabase' });
   const query = useQuery({
     queryKey: ["messages", conversationId],
     queryFn: () => fetchMessages(getToken, conversationId!),

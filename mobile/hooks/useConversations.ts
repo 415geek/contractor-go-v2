@@ -51,7 +51,8 @@ async function createConversation(
 
 export function useConversations() {
   const qc = useQueryClient();
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { getToken: _getToken, isLoaded, isSignedIn } = useAuth();
+  const getToken = () => _getToken({ template: 'supabase' });
   const { user } = useUser();
   const query = useQuery({
     queryKey: ["conversations"],

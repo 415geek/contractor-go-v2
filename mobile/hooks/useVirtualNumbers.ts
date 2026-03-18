@@ -57,7 +57,8 @@ async function purchaseNumber(
 
 export function useVirtualNumbers() {
   const qc = useQueryClient();
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { getToken: _getToken, isLoaded, isSignedIn } = useAuth();
+  const getToken = () => _getToken({ template: 'supabase' });
   const query = useQuery({
     queryKey: ["virtualNumbers"],
     queryFn: () => fetchMyNumbers(getToken),

@@ -139,7 +139,8 @@ async function deleteProject(getToken: () => Promise<string | null>, userId: str
 
 export function useProjects(status?: ProjectStatus) {
   const qc = useQueryClient();
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { getToken: _getToken, isLoaded, isSignedIn } = useAuth();
+  const getToken = () => _getToken({ template: 'supabase' });
   const { user } = useUser();
   const query = useQuery({
     queryKey: ["projects", status ?? "all"],
@@ -179,7 +180,8 @@ export function useProjects(status?: ProjectStatus) {
 }
 
 export function useProject(id: string | undefined) {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { getToken: _getToken, isLoaded, isSignedIn } = useAuth();
+  const getToken = () => _getToken({ template: 'supabase' });
   const { user } = useUser();
   const query = useQuery({
     queryKey: ["project", id],
