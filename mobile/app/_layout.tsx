@@ -6,11 +6,19 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { WebResponsiveWrapper } from "@/components/WebResponsiveWrapper";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
+    },
+  },
+});
 
 function RootNavigator() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -27,6 +35,14 @@ function RootNavigator() {
       router.replace("/landing");
     }
   }, [isSignedIn, isLoaded, segments]);
+
+  if (!isLoaded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#0F172A", alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator size="large" color="#2563EB" />
+      </View>
+    );
+  }
 
   return (
     <Stack
