@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useAuth } from "@clerk/clerk-expo";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { createAuthenticatedClient, supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 export type Message = {
   id: string;
@@ -18,14 +18,14 @@ export type Message = {
 async function fetchMessages(getToken: () => Promise<string | null>, conversationId: string): Promise<Message[]> {
   const token = await getToken();
   if (!token) throw new Error("Not authenticated");
-  const client = createAuthenticatedClient(token);
-  const { data, error } = await client
-    .from("messages")
-    .select("id, conversation_id, direction, message_type, original_content, translated_content, status, created_at")
-    .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true });
-  if (error) throw new Error(error.message);
-  return data ?? [];
+  const { data, error } = await supabase.functions.invoke<{ data: Message[]; error: string | null }>("get-messages", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: { conversation_id: conversationId },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error as string);
+  return data?.data ?? [];
 }
 
 async function sendMessage(getToken: () => Promise<string | null>, conversationId: string, content: string): Promise<Message> {
@@ -59,19 +59,11 @@ export function useMessages(conversationId: string | null) {
     },
   });
 
+  // 轮询刷新消息（Realtime 需 Clerk JWT，易触发 "No suitable key"，改用轮询）
   useEffect(() => {
     if (!conversationId) return;
-    const channel = supabase
-      .channel(`messages:${conversationId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
-        () => qc.invalidateQueries({ queryKey: ["messages", conversationId] }),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    const interval = setInterval(() => qc.invalidateQueries({ queryKey: ["messages", conversationId] }), 10000);
+    return () => clearInterval(interval);
   }, [conversationId, qc]);
 
   return {

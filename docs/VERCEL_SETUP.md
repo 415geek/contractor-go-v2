@@ -39,11 +39,15 @@
 
 点 **Deploy**，等构建完成。
 
-### 5. 绑定域名 www.contractorgo.io
+### 5. 绑定域名（重要：避免「不安全」提示）
 
 1. 进入该项目 → **Settings** → **Domains**
-2. 在 **Domain** 输入框填：`www.contractorgo.io` → **Add**
-3. 按页面提示到域名商（如 Hostinger）把 **www** 的 CNAME 指到 Vercel 给出的地址（通常是 `cname.vercel-dns.com` 或项目给的域名）
+2. 添加 **www.contractorgo.io** → **Add**
+3. 添加 **contractorgo.io**（根域名）→ **Add**
+4. 按 Vercel 提示到域名商配置：
+   - **www**：CNAME 指向 `cname.vercel-dns.com`（或 Vercel 给出的地址）
+   - **根域名 contractorgo.io**：A 记录指向 `76.76.21.21`，或使用 ALIAS/ANAME 指向 `cname.vercel-dns.com`（部分 DNS 商支持）
+5. 确保两个域名都显示 **Valid** 和 **HTTPS 已启用**，否则手机访问会显示「不安全」
 
 ---
 
@@ -82,10 +86,36 @@
 
 ---
 
-## 三、检查清单
+## 三、Supabase + Clerk 配置（消息/对话功能）
+
+Clerk 作为 Supabase 第三方认证时，需在 Supabase Dashboard 中配置：
+
+1. 打开 [Supabase Dashboard](https://supabase.com/dashboard/project/wvqyoyfiqixtmxssvlco) → **Authentication** → **Third-party providers**
+2. 添加 **Clerk** 集成
+3. **Domain** 填：`clerk.contractorgo.io`（Clerk Frontend API 域名，不含 https://）
+4. 在 [Clerk Connect with Supabase](https://dashboard.clerk.com/setup/supabase) 完成 Clerk 侧配置
+
+本地开发时，`supabase/.env` 已配置 `CLERK_DOMAIN=clerk.contractorgo.io`，运行 `supabase link`、`supabase functions deploy` 等命令时会自动使用。
+
+---
+
+## 四、检查清单
 
 - [ ] **用户端**：Root Directory **留空**，Framework = **Other**，域名只绑 **www.contractorgo.io**
 - [ ] **管理后台**：Root Directory = **admin**，Framework = **Next.js**，域名绑 **admin.contractorgo.io**（不要绑 www）
 - [ ] 若 www.contractorgo.io 之前绑在 admin 项目上，已在该项目的 **Domains** 里**移除** www.contractorgo.io
+- [ ] **Supabase**：Authentication → Third-party → Clerk 已添加，Domain = `clerk.contractorgo.io`
 
 完成后：打开 https://www.contractorgo.io 应看到用户端（手机号登录）；打开 https://admin.contractorgo.io 应看到管理后台（邮箱+密码登录）。
+
+---
+
+## 五、根域名 contractorgo.io 显示「不安全」、www 正常
+
+项目已配置 `middleware.js`：访问 `contractorgo.io` 会自动 308 重定向到 `https://www.contractorgo.io`。
+
+**前提**：根域名必须指向 Vercel，否则请求不会到达 Vercel，重定向不会生效。
+
+1. **Vercel**：Settings → Domains → 添加 `contractorgo.io`（与 www 同项目）
+2. **DNS**：根域名 A 记录指向 `76.76.21.21`，或 ALIAS/ANAME 指向 `cname.vercel-dns.com`
+3. 部署后，访问 `contractorgo.io` 会跳转到 `https://www.contractorgo.io`，不再显示「不安全」

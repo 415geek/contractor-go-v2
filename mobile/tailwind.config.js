@@ -72,6 +72,14 @@ module.exports = {
           100: "#DBEAFE",
           500: "#2563EB",
         },
+        // 改进文字对比度
+        slate: {
+          300: "#CBD5E1",
+          400: "#94A3B8",
+          500: "#64748B",
+          600: "#475569",
+          700: "#334155",
+        },
       },
       borderRadius: {
         "auth-input": "14px",
@@ -81,6 +89,8 @@ module.exports = {
         "project-card": "12px",
         badge: "8px",
         "chat-bubble": "20px",
+        "2xl": "16px",
+        "3xl": "24px",
       },
       minHeight: {
         touch: "44px",
@@ -98,6 +108,49 @@ module.exports = {
         22: "88px",
         26: "104px",
         30: "120px",
+      },
+      boxShadow: {
+        "card": "0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08)",
+        "card-lg": "0 4px 16px rgba(0, 0, 0, 0.16), 0 2px 4px rgba(0, 0, 0, 0.12)",
+        "elevated": "0 8px 32px rgba(0, 0, 0, 0.24), 0 4px 8px rgba(0, 0, 0, 0.12)",
+        "button": "0 2px 8px rgba(37, 99, 235, 0.3)",
+        "button-lg": "0 4px 16px rgba(37, 99, 235, 0.4)",
+        "inner-light": "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+      },
+      animation: {
+        "fade-in": "fadeIn 0.3s ease-out",
+        "slide-up": "slideUp 0.3s ease-out",
+        "slide-down": "slideDown 0.3s ease-out",
+        "scale-in": "scaleIn 0.2s ease-out",
+        "pulse-soft": "pulseSoft 2s ease-in-out infinite",
+      },
+      keyframes: {
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        slideUp: {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        slideDown: {
+          "0%": { opacity: "0", transform: "translateY(-10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        scaleIn: {
+          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        pulseSoft: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
+        },
+      },
+      backdropBlur: {
+        xs: "2px",
+      },
+      borderWidth: {
+        "0.5": "0.5px",
       },
     },
   },

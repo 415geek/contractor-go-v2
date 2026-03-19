@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LANG_OPTIONS, useLang } from "@/lib/i18n";
 
@@ -114,10 +114,29 @@ export default function LandingScreen() {
   const router = useRouter();
   const { t, loadLang, lang } = useLang();
   const statLabels = STAT_LABELS[lang] ?? STAT_LABELS.zh;
+  const insets = useSafeAreaInsets();
 
-  // Entrance animation
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(24)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.97,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
 
   useEffect(() => {
     loadLang().then(() => {
@@ -168,10 +187,11 @@ export default function LandingScreen() {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-app" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-surface-app" edges={["top", "left", "right"]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 16 }}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) }}
+        keyboardShouldPersistTaps="handled"
       >
         {/* ── 顶部栏：Logo + 语言切换 ── */}
         <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
@@ -274,19 +294,25 @@ export default function LandingScreen() {
             {/* ── CTA 按钮 ── */}
             <Pressable
               onPress={() => router.push("/(auth)/login")}
-              className="min-h-touch-xl items-center justify-center rounded-xl bg-primary-600 active:bg-primary-700 mb-3"
-              style={{
-                shadowColor: "#2563EB",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.4,
-                shadowRadius: 12,
-              }}
+              onPressIn={handlePressIn}
+              onPressOut={handlePressOut}
             >
-              <Text className="text-white font-bold text-base">{t.startBtn}</Text>
+              <Animated.View
+                className="min-h-touch-xl items-center justify-center rounded-xl bg-primary-600"
+                style={{
+                  transform: [{ scale: scaleAnim }],
+                  shadowColor: "#2563EB",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.4,
+                  shadowRadius: 12,
+                }}
+              >
+                <Text className="text-white font-bold text-base">{t.startBtn}</Text>
+              </Animated.View>
             </Pressable>
             <Pressable
               onPress={() => router.push("/(auth)/login")}
-              className="min-h-touch items-center justify-center rounded-xl border border-slate-700 active:bg-surface-elevated"
+              className="min-h-touch items-center justify-center rounded-xl border border-slate-700 active:bg-surface-elevated mt-3"
             >
               <Text className="text-slate-300 text-sm">{t.loginBtn}</Text>
             </Pressable>

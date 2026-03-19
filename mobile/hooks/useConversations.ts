@@ -1,7 +1,7 @@
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { createAuthenticatedClient } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 export type Conversation = {
   id: string;
@@ -17,36 +17,30 @@ export type Conversation = {
 async function fetchConversations(getToken: () => Promise<string | null>): Promise<Conversation[]> {
   const token = await getToken();
   if (!token) throw new Error("Not authenticated");
-  const client = createAuthenticatedClient(token);
-  const { data, error } = await client
-    .from("conversations")
-    .select("id, user_id, virtual_number_id, contact_phone, contact_name, contact_language, last_message_at, created_at")
-    .order("last_message_at", { ascending: false, nullsFirst: false });
-  if (error) throw new Error(error.message);
-  return data ?? [];
+  const { data, error } = await supabase.functions.invoke<{ data: Conversation[]; error: string | null }>("get-conversations", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error as string);
+  return data?.data ?? [];
 }
 
 async function createConversation(
   getToken: () => Promise<string | null>,
-  userId: string,
+  _userId: string,
   params: { contact_phone: string; contact_name?: string; virtual_number_id?: string },
 ): Promise<Conversation> {
   const token = await getToken();
   if (!token) throw new Error("Not authenticated");
-  const client = createAuthenticatedClient(token);
-  const { data, error } = await client
-    .from("conversations")
-    .insert({
-      user_id: userId,
-      contact_phone: params.contact_phone,
-      contact_name: params.contact_name ?? params.contact_phone,
-      contact_language: "en-US",
-      virtual_number_id: params.virtual_number_id ?? null,
-    })
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-  return data as Conversation;
+  const { data, error } = await supabase.functions.invoke<{ data: Conversation; error: string | null }>("create-conversation", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: params,
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error as string);
+  if (!data?.data) throw new Error("No data returned");
+  return data.data;
 }
 
 export function useConversations() {

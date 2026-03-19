@@ -1,27 +1,24 @@
-"use client";
-
 import { useOAuth, useSignIn, useSignUp } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import * as AuthSession from "expo-auth-session";
-import * as WebBrowser from "expo-web-browser";
 import { router } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { useLang } from "@/lib/i18n";
-
-WebBrowser.maybeCompleteAuthSession();
 
 const LABELS = {
   zh: {
@@ -82,6 +79,7 @@ type Tab = "phone" | "email";
 export default function LoginScreen() {
   const { lang } = useLang();
   const L = LABELS[lang] ?? LABELS.zh;
+  const insets = useSafeAreaInsets();
 
   const { signIn, setActive: setActiveSignIn, isLoaded: signInLoaded } = useSignIn();
   const { signUp, setActive: setActiveSignUp, isLoaded: signUpLoaded } = useSignUp();
@@ -94,6 +92,15 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, { toValue: 0.97, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
+  };
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
+  };
 
   const fullPhone = useMemo(() => `${countryCode}${phoneNumber}`, [countryCode, phoneNumber]);
   const canSendOtp = phoneNumber.length >= 8 && !loading;
@@ -167,20 +174,29 @@ export default function LoginScreen() {
     async (provider: "google" | "github") => {
       setLoading(true);
       try {
+        if (Platform.OS === "web") {
+          // Web: full-page redirect flow avoids popup/COOP/Turnstile issues entirely.
+          // Clerk will redirect back to /sso-callback which completes the session.
+          const strategy = `oauth_${provider}` as `oauth_${typeof provider}`;
+          await signIn!.authenticateWithRedirect({
+            strategy,
+            redirectUrl: `${window.location.origin}/sso-callback`,
+            redirectUrlComplete: `${window.location.origin}/`,
+          });
+          // Full page navigates away — no further code executes here.
+          return;
+        }
+
+        // Native: popup-based OAuth with deep-link redirect scheme.
         const flow = provider === "google" ? startGoogle : startGitHub;
         const redirectUrl = AuthSession.makeRedirectUri({ scheme: "contractorgo" });
-        const { createdSessionId, setActive, signUp } = await flow({ redirectUrl });
+        const { createdSessionId, setActive, signUp: oauthSignUp } = await flow({ redirectUrl });
         if (createdSessionId && setActive) {
-          // Existing user: session created directly
           await setActive({ session: createdSessionId });
           router.replace("/(tabs)");
-        } else if (signUp?.status === "complete" && signUp.createdSessionId && setActive) {
-          // New user: sign-up completed via OAuth
-          await setActive({ session: signUp.createdSessionId });
+        } else if (oauthSignUp?.status === "complete" && oauthSignUp.createdSessionId && setActive) {
+          await setActive({ session: oauthSignUp.createdSessionId });
           router.replace("/(tabs)");
-        } else if (!createdSessionId) {
-          // OAuth flow returned without a session (cancelled or incomplete)
-          Alert.alert(L.failTitle, provider === "google" ? "Google 登录未完成，请重试" : "GitHub 登录未完成，请重试");
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : L.failTitle;
@@ -189,16 +205,23 @@ export default function LoginScreen() {
         setLoading(false);
       }
     },
-    [startGoogle, startGitHub, L.failTitle]
+    [signIn, startGoogle, startGitHub, L.failTitle]
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-app" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-surface-app" edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <View className="flex-1 px-5 pt-4 pb-8">
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: Math.max(insets.bottom, 24) }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+        <View className="flex-1 px-5 pt-4">
           {/* 返回落地页 */}
           <Pressable
             onPress={() => router.replace("/landing")}
@@ -241,14 +264,20 @@ export default function LoginScreen() {
               />
               <Pressable
                 onPress={() => void handleSendOtp()}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
                 disabled={!canSendOtp}
-                className="mt-5 min-h-touch-xl items-center justify-center rounded-auth-button bg-primary-600 px-5 active:bg-primary-700 disabled:opacity-50"
               >
-                {loading ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Text className="text-base font-semibold text-white">{L.sendCode}</Text>
-                )}
+                <Animated.View
+                  className="mt-5 min-h-touch-xl items-center justify-center rounded-auth-button bg-primary-600 px-5"
+                  style={{ transform: [{ scale: scaleAnim }], opacity: canSendOtp ? 1 : 0.5 }}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text className="text-base font-semibold text-white">{L.sendCode}</Text>
+                  )}
+                </Animated.View>
               </Pressable>
             </View>
           )}
@@ -284,14 +313,20 @@ export default function LoginScreen() {
               </View>
               <Pressable
                 onPress={() => void handleEmailAuth()}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
                 disabled={!email || !password || loading}
-                className="mt-5 min-h-touch-xl items-center justify-center rounded-auth-button bg-primary-600 px-5 active:bg-primary-700 disabled:opacity-50"
               >
-                {loading ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Text className="text-base font-semibold text-white">{L.signIn}</Text>
-                )}
+                <Animated.View
+                  className="mt-5 min-h-touch-xl items-center justify-center rounded-auth-button bg-primary-600 px-5"
+                  style={{ transform: [{ scale: scaleAnim }], opacity: email && password && !loading ? 1 : 0.5 }}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text className="text-base font-semibold text-white">{L.signIn}</Text>
+                  )}
+                </Animated.View>
               </Pressable>
             </View>
           )}
@@ -323,6 +358,7 @@ export default function LoginScreen() {
             </View>
           </View>
         </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

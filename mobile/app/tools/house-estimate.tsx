@@ -12,11 +12,12 @@ import {
   Alert,
 } from "react-native";
 
+import { useUser } from "@clerk/clerk-expo";
 import { EstimateSegment } from "@/components/tools/EstimateSegment";
 import { useHouseEstimate } from "@/hooks/useHouseEstimate";
 import { supabase } from "@/lib/supabase";
 
-async function pickAndUploadImage(): Promise<string | null> {
+async function pickAndUploadImage(userId: string): Promise<string | null> {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (status !== "granted") {
     Alert.alert("需要相册权限");
@@ -33,9 +34,7 @@ async function pickAndUploadImage(): Promise<string | null> {
     const res = await fetch(uri);
     const blob = await res.blob();
     const fileName = `${Date.now()}.jpg`;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) return null;
-    const path = `estimates/${session.user.id}/${fileName}`;
+    const path = `estimates/${userId}/${fileName}`;
     const { data: up, error } = await supabase.storage.from("material-images").upload(path, blob, { upsert: true });
     if (error) throw error;
     const { data: urlData } = supabase.storage.from("material-images").getPublicUrl(up.path);
@@ -47,11 +46,13 @@ async function pickAndUploadImage(): Promise<string | null> {
 
 export default function HouseEstimateScreen() {
   const router = useRouter();
+  const { user } = useUser();
   const { estimateHouse, isEstimating, result, error } = useHouseEstimate();
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   const handleAddImage = async () => {
-    const url = await pickAndUploadImage();
+    if (!user?.id) return;
+    const url = await pickAndUploadImage(user.id);
     if (url) setImageUrls((prev) => [...prev, url].slice(0, 5));
   };
 

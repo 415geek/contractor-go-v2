@@ -10,11 +10,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_ANON_KEY.");
 }
 
+// 使用 Clerk 认证，不持久化 Supabase Auth session，避免旧 session 导致 "No suitable key"
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
+    autoRefreshToken: false,
+    persistSession: false,
     detectSessionInUrl: false,
   },
 });

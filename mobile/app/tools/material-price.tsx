@@ -13,13 +13,14 @@ import {
   Alert,
 } from "react-native";
 
+import { useUser } from "@clerk/clerk-expo";
 import { MaterialResultCard } from "@/components/tools/MaterialResultCard";
 import { useMaterialSearch } from "@/hooks/useMaterialSearch";
 import { supabase } from "@/lib/supabase";
 
 const MAX_IMAGES = 5;
 
-async function pickAndUploadImage(): Promise<string | null> {
+async function pickAndUploadImage(userId: string): Promise<string | null> {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (status !== "granted") {
     Alert.alert("需要相册权限");
@@ -34,9 +35,7 @@ async function pickAndUploadImage(): Promise<string | null> {
   const uri = result.assets[0].uri;
   const ext = uri.split(".").pop()?.toLowerCase() || "jpg";
   const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user?.id) return null;
-  const path = `${session.user.id}/${fileName}`;
+  const path = `${userId}/${fileName}`;
   try {
     const res = await fetch(uri);
     const blob = await res.blob();
@@ -51,6 +50,7 @@ async function pickAndUploadImage(): Promise<string | null> {
 
 export default function MaterialPriceScreen() {
   const router = useRouter();
+  const { user } = useUser();
   const { searchMaterial, isSearching, results, error, retry } = useMaterialSearch();
   const [imageUris, setImageUris] = useState<string[]>([]);
   const [description, setDescription] = useState("");
@@ -93,7 +93,8 @@ export default function MaterialPriceScreen() {
             {imageUris.length < MAX_IMAGES && (
               <Pressable
                 onPress={async () => {
-                  const url = await pickAndUploadImage();
+                  if (!user?.id) return;
+                  const url = await pickAndUploadImage(user.id);
                   if (url) setImageUris((prev) => [...prev.slice(0, MAX_IMAGES - 1), url]);
                 }}
                 className="h-20 w-20 items-center justify-center rounded-lg border border-dashed border-slate-600 bg-slate-800/50"

@@ -341,7 +341,7 @@ enabled = false
 [auth.third_party.clerk]
 enabled = true
 # Obtain from https://clerk.com/setup/supabase
-# Set CLERK_DOMAIN env var to your Clerk Frontend API domain (e.g. your-app.clerk.accounts.dev)
+# Clerk Frontend API 域名（不含 https://）
 domain = "env(CLERK_DOMAIN)"
 
 # OAuth server configuration
@@ -428,4 +428,16 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.voip-webhook]
+verify_jwt = false
+
+[functions.get-conversations]
+verify_jwt = false
+
+[functions.create-conversation]
+verify_jwt = false
+
+[functions.get-messages]
+verify_jwt = false
+
+[functions.projects]
 verify_jwt = false

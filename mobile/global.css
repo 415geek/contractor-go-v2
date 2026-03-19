@@ -4,9 +4,25 @@
 
 /* Web: mobile-first viewport, auth above-the-fold, consistent touch targets */
 @layer base {
+  /* iOS Safari viewport fix */
   html {
     -webkit-tap-highlight-color: transparent;
+    height: -webkit-fill-available;
   }
+
+  body {
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
+
+  /* Safe area insets for notch and home indicator */
+  :root {
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-inset-left: env(safe-area-inset-left, 0px);
+    --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  }
+
   @media (min-width: 768px) {
     html {
       font-size: 16px;
@@ -15,9 +31,24 @@
       max-width: 430px;
       margin-left: auto;
       margin-right: auto;
-      min-height: 100vh;
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
       box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
       background: #0f172a;
     }
+  }
+
+  /* Utility classes for safe area */
+  .safe-area-top {
+    padding-top: var(--safe-area-inset-top);
+  }
+  .safe-area-bottom {
+    padding-bottom: var(--safe-area-inset-bottom);
+  }
+  .safe-area-left {
+    padding-left: var(--safe-area-inset-left);
+  }
+  .safe-area-right {
+    padding-right: var(--safe-area-inset-right);
   }
 }
