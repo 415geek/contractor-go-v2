@@ -1,0 +1,28 @@
+# 推送到 main 后通过 SSH 在 VPS 上执行部署脚本（需在仓库 Secrets 配置密钥）
+name: Deploy web to VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - "package.json"
+      - "vercel.json"
+      - "scripts/deploy-vps.sh"
+      - ".github/workflows/deploy-vps.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            set -e
+            /usr/local/bin/contractor-web-deploy.sh
