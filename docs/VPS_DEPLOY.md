@@ -70,6 +70,23 @@ export CONTRACTOR_WEB_ROOT=/var/www/contractor-web
 export CONTRACTOR_GIT_BRANCH=main
 ```
 
-## 五、管理后台（Next.js）
+## 五、已有 Docker + Traefik（如 72.62.82.26）
+
+若 `contractorgov2-web` 容器已挂载 `.../mobile/dist`，把构建结果同步到该目录即可，无需占用宿主机 80 端口。
+
+```bash
+sudo tee /etc/contractor-deploy.env << 'EOF'
+CONTRACTOR_REPO_DIR=/opt/contractor-go-v2
+CONTRACTOR_WEB_ROOT=/opt/contractorgov2/current/mobile/dist
+CONTRACTOR_GIT_BRANCH=main
+EOF
+
+sudo /usr/local/bin/contractor-web-deploy.sh
+sudo docker restart contractorgov2-web
+```
+
+`releases/current` 若由其他发布系统管理，也可把 `CONTRACTOR_WEB_ROOT` 指到实际被挂载的 `mobile/dist` 路径。
+
+## 六、管理后台（Next.js）
 
 本脚本只部署 **Mobile Web 静态站**。Admin 需单独用 Node 运行或仍用 Vercel，参见 [VERCEL_SETUP.md](./VERCEL_SETUP.md)。

@@ -5,6 +5,14 @@
 
 set -euo pipefail
 
+# 可选：在 VPS 上创建 /etc/contractor-deploy.env 覆盖路径，例如：
+#   CONTRACTOR_REPO_DIR=/opt/contractor-go-v2
+#   CONTRACTOR_WEB_ROOT=/opt/contractorgov2/current/mobile/dist
+if [[ -f /etc/contractor-deploy.env ]]; then
+  # shellcheck disable=SC1091
+  source /etc/contractor-deploy.env
+fi
+
 REPO_DIR="${CONTRACTOR_REPO_DIR:-/opt/contractor-go-v2}"
 WEB_ROOT="${CONTRACTOR_WEB_ROOT:-/var/www/contractor-web}"
 BRANCH="${CONTRACTOR_GIT_BRANCH:-main}"
@@ -41,8 +49,15 @@ log "rsync -> $WEB_ROOT"
 rsync -a --delete "$REPO_DIR/mobile/dist/" "$WEB_ROOT/"
 
 if command -v nginx >/dev/null 2>&1; then
-  log "nginx reload"
-  nginx -t && systemctl reload nginx
+  if nginx -t 2>/dev/null; then
+    if systemctl is-active --quiet nginx 2>/dev/null; then
+      log "nginx reload"
+      systemctl reload nginx
+    else
+      log "nginx start"
+      systemctl enable --now nginx 2>/dev/null || true
+    fi
+  fi
 fi
 
 log "完成"
