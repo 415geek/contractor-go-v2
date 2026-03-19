@@ -79,10 +79,10 @@ sudo tee /etc/contractor-deploy.env << 'EOF'
 CONTRACTOR_REPO_DIR=/opt/contractor-go-v2
 CONTRACTOR_WEB_ROOT=/opt/contractorgov2/current/mobile/dist
 CONTRACTOR_GIT_BRANCH=main
+CONTRACTOR_RESTART_DOCKER=contractorgov2-web
 EOF
 
 sudo /usr/local/bin/contractor-web-deploy.sh
-sudo docker restart contractorgov2-web
 ```
 
 `releases/current` 若由其他发布系统管理，也可把 `CONTRACTOR_WEB_ROOT` 指到实际被挂载的 `mobile/dist` 路径。

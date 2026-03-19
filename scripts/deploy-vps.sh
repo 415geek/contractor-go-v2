@@ -60,4 +60,10 @@ if command -v nginx >/dev/null 2>&1; then
   fi
 fi
 
+if [[ -n "${CONTRACTOR_RESTART_DOCKER:-}" ]] && command -v docker >/dev/null 2>&1; then
+  # 例：CONTRACTOR_RESTART_DOCKER=contractorgov2-web
+  log "docker restart ${CONTRACTOR_RESTART_DOCKER}"
+  docker restart "${CONTRACTOR_RESTART_DOCKER}" || true
+fi
+
 log "完成"
