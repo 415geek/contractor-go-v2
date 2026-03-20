@@ -1,6 +1,6 @@
 # Voip.ms API 参考文档
 
-> 基于 `API.zip` 官方文档整理，用于 Phase 2 的 Voip.ms 集成。
+> 基于 `API.zip` 官方文档（WSDL / REST 示例）整理；线上说明页 `https://voip.ms/m/apidocs.php` 可能被 Cloudflare 拦截自动化访问，以账户内 **API / Developers** 文档为准。
 
 ---
 
@@ -82,6 +82,9 @@ GET .../rest.php?api_username=xxx&api_password=xxx&method=getDIDsUSA&state=CA&ra
 method=orderDID&did=14155551234&routing=account:main&billing_type=1&account=main
 ```
 
+> ⚠️ **`did` 格式**：必须为 **纯数字**（通常 11 位美国号码 `1` + 10 位），**不要**包含 `+` 或空格。使用 `+14155551234` 可能导致订购失败。  
+> 建议在调用 `orderDID` 时传入 `monthly`、`setup`（与 `getDIDsUSA` 返回字段一致），与控制台下单行为对齐。
+
 ---
 
 ### 2.4 发送短信 `sendSMS`
@@ -131,6 +134,8 @@ POST/GET .../rest.php?api_username=xxx&api_password=xxx&method=sendSMS&did=14155
   ]
 }
 ```
+
+部分环境下 `dids` / `ratecenters` 可能以 **JSON 对象**（键为 `"0"`,`"1"`…）而非数组返回，集成时需 `Object.values()` 归一化为数组后再展示。
 
 ### 错误示例
 

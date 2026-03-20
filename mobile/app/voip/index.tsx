@@ -1,12 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { View, Text, Pressable, FlatList, ActivityIndicator } from "react-native";
 
 import { NumberCard } from "@/components/voip/NumberCard";
 import { useVirtualNumbers } from "@/hooks/useVirtualNumbers";
+import { pushPath } from "@/lib/web-navigation";
 
 export default function VoipIndexScreen() {
-  const router = useRouter();
   const { numbers, isLoading, error, refetch } = useVirtualNumbers();
 
   if (isLoading) {
@@ -22,7 +21,7 @@ export default function VoipIndexScreen() {
       <View className="flex-row items-center justify-between px-4 pt-12 pb-4 border-b border-gray-800">
         <Text className="text-white text-xl font-semibold">我的号码</Text>
         <Pressable
-          onPress={() => router.push("/voip/purchase")}
+          onPress={() => pushPath("/voip/purchase")}
           className="bg-blue-600 px-4 py-2 rounded-lg flex-row items-center gap-2"
         >
           <Ionicons name="add" size={20} color="white" />
@@ -40,7 +39,7 @@ export default function VoipIndexScreen() {
           <Text className="text-gray-400 text-center mt-4 text-lg">您还没有虚拟号码</Text>
           <Text className="text-gray-500 text-center mt-2">点击下方按钮购买</Text>
           <Pressable
-            onPress={() => router.push("/voip/purchase")}
+            onPress={() => pushPath("/voip/purchase")}
             className="mt-6 bg-blue-600 px-6 py-3 rounded-lg"
           >
             <Text className="text-white font-medium">购买新号码</Text>

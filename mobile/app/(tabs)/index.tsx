@@ -4,6 +4,7 @@ import { View, Text, FlatList, Pressable, RefreshControl, ActivityIndicator } fr
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useConversations } from "@/hooks/useConversations";
+import { pushPath } from "@/lib/web-navigation";
 
 const LANG_MAP: Record<string, string> = {
   "en-US": "EN",
@@ -72,7 +73,7 @@ export default function MessagesIndexScreen() {
 
       {/* 虚拟号码条 */}
       <Pressable
-        onPress={() => router.push("/voip" as never)}
+        onPress={() => pushPath("/voip")}
         className="mx-4 mb-3 rounded-xl bg-primary-600 px-4 py-3 flex-row items-center active:bg-primary-700"
       >
         <Ionicons name="call" size={18} color="white" />
@@ -100,7 +101,7 @@ export default function MessagesIndexScreen() {
             购买虚拟号码后，{"\n"}客户的消息会出现在这里
           </Text>
           <Pressable
-            onPress={() => router.push("/voip" as never)}
+            onPress={() => pushPath("/voip")}
             className="mt-6 bg-primary-600 rounded-xl px-6 py-3.5 active:bg-primary-700"
           >
             <Text className="text-white font-semibold">获取虚拟号码</Text>

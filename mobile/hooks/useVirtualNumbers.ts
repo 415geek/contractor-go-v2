@@ -41,13 +41,14 @@ async function purchaseNumber(
   getToken: () => Promise<string | null>,
   did: string,
   monthly?: string,
+  setup?: string,
 ): Promise<VirtualNumber> {
   const token = await getToken();
   if (!token) throw new Error("Not authenticated");
   const { data, error } = await supabase.functions.invoke<{ data: VirtualNumber; error: string | null }>("voip-purchase-number", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
-    body: { did, monthly },
+    body: { did, monthly, setup },
   });
   if (error) throw error;
   if (data?.error) throw new Error(data.error as string);
@@ -68,7 +69,8 @@ export function useVirtualNumbers() {
     mutationFn: searchAvailableNumbers,
   });
   const purchaseMutation = useMutation({
-    mutationFn: ({ did, monthly }: { did: string; monthly?: string }) => purchaseNumber(getToken, did, monthly),
+    mutationFn: ({ did, monthly, setup }: { did: string; monthly?: string; setup?: string }) =>
+      purchaseNumber(getToken, did, monthly, setup),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["virtualNumbers"] }),
   });
   return {

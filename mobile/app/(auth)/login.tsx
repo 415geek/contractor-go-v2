@@ -19,6 +19,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { useLang } from "@/lib/i18n";
+import { replaceSignedInHome } from "@/lib/web-navigation";
 
 const LABELS = {
   zh: {
@@ -147,7 +148,7 @@ export default function LoginScreen() {
       const result = await signIn!.create({ identifier: email, password });
       if (result.status === "complete") {
         await setActiveSignIn!({ session: result.createdSessionId! });
-        router.replace("/(tabs)");
+        replaceSignedInHome();
       }
     } catch {
       // User not found → create account
@@ -155,7 +156,7 @@ export default function LoginScreen() {
         const result = await signUp!.create({ emailAddress: email, password });
         if (result.status === "complete") {
           await setActiveSignUp!({ session: result.createdSessionId! });
-          router.replace("/(tabs)");
+          replaceSignedInHome();
         } else {
           await signUp!.prepareEmailAddressVerification({ strategy: "email_code" });
           router.push({ pathname: "/(auth)/verify", params: { email, flow: "sign-up-email" } });
@@ -193,10 +194,10 @@ export default function LoginScreen() {
         const { createdSessionId, setActive, signUp: oauthSignUp } = await flow({ redirectUrl });
         if (createdSessionId && setActive) {
           await setActive({ session: createdSessionId });
-          router.replace("/(tabs)");
+          replaceSignedInHome();
         } else if (oauthSignUp?.status === "complete" && oauthSignUp.createdSessionId && setActive) {
           await setActive({ session: oauthSignUp.createdSessionId });
-          router.replace("/(tabs)");
+          replaceSignedInHome();
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : L.failTitle;

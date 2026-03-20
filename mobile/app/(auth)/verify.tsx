@@ -15,6 +15,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { OtpInput } from "@/components/ui/OtpInput";
+import { replaceSignedInHome } from "@/lib/web-navigation";
 
 type VerifyFlow = "sign-in" | "sign-up-phone" | "sign-up-email";
 
@@ -69,19 +70,19 @@ export default function VerifyScreen() {
         });
         if (result.status === "complete") {
           await setActiveSignIn!({ session: result.createdSessionId! });
-          router.replace("/(tabs)");
+          replaceSignedInHome();
         }
       } else if (flow === "sign-up-phone") {
         const result = await signUp!.attemptPhoneNumberVerification({ code: nextCode });
         if (result.status === "complete") {
           await setActiveSignUp!({ session: result.createdSessionId! });
-          router.replace("/(tabs)");
+          replaceSignedInHome();
         }
       } else {
         const result = await signUp!.attemptEmailAddressVerification({ code: nextCode });
         if (result.status === "complete") {
           await setActiveSignUp!({ session: result.createdSessionId! });
-          router.replace("/(tabs)");
+          replaceSignedInHome();
         }
       }
     } catch (err) {

@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { pushPath } from "@/lib/web-navigation";
 
 type Tool = {
   id: string;
@@ -22,7 +23,7 @@ const TOOLS: Tool[] = [
     icon: "pricetag-outline",
     color: "#22C55E",
     iconBg: "bg-success-500/15",
-    route: "/tools/material-price",
+    route: "/workbench/material-price",
     badge: "free",
   },
   {
@@ -32,7 +33,7 @@ const TOOLS: Tool[] = [
     icon: "home-outline",
     color: "#F97316",
     iconBg: "bg-accent-500/15",
-    route: "/tools/house-estimate",
+    route: "/workbench/house-estimate",
     badge: "pro",
   },
   {
@@ -42,7 +43,7 @@ const TOOLS: Tool[] = [
     icon: "document-text-outline",
     color: "#8B5CF6",
     iconBg: "bg-purple-500/15",
-    route: "/tools/permit",
+    route: "/workbench/permit",
     badge: "free",
   },
   {
@@ -57,10 +58,10 @@ const TOOLS: Tool[] = [
   },
 ];
 
-function ToolCard({ tool, onPress }: { tool: Tool; onPress: () => void }) {
+function ToolCard({ tool }: { tool: Tool }) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => pushPath(tool.route)}
       className="flex-1 min-w-0 rounded-tool-card border border-slate-700/60 bg-surface-card p-4 active:bg-slate-700/60"
       style={{ minHeight: 140 }}
     >
@@ -94,7 +95,6 @@ function ToolCard({ tool, onPress }: { tool: Tool; onPress: () => void }) {
 }
 
 export default function ToolsScreen() {
-  const router = useRouter();
 
   const rows: Tool[][] = [];
   for (let i = 0; i < TOOLS.length; i += 2) {
@@ -117,11 +117,7 @@ export default function ToolsScreen() {
         {rows.map((row, rowIdx) => (
           <View key={rowIdx} className="flex-row gap-3 mb-3">
             {row.map((tool) => (
-              <ToolCard
-                key={tool.id}
-                tool={tool}
-                onPress={() => router.push(tool.route as never)}
-              />
+              <ToolCard key={tool.id} tool={tool} />
             ))}
             {/* 补齐奇数行 */}
             {row.length === 1 && <View className="flex-1" />}

@@ -7,11 +7,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { ActivityIndicator, Platform, View } from "react-native";
+import { ActivityIndicator, Platform, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { WebResponsiveWrapper } from "@/components/WebResponsiveWrapper";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 WebBrowser.maybeCompleteAuthSession({ skipRedirectCheck: true });
 
@@ -31,16 +32,16 @@ function RootNavigator() {
 
   useEffect(() => {
     if (!isLoaded) return;
-    const inAuthGroup = segments[0] === "(auth)";
-    const inLanding = segments[0] === "landing";
-    const inSSO = segments[0] === "sso-callback";
-    const inTabs = segments[0] === "(tabs)";
-
-    if (isSignedIn && !inTabs) {
-      router.replace("/(tabs)");
-    } else if (!isSignedIn && !inAuthGroup && !inLanding && !inSSO) {
-      router.replace("/landing");
+    // 仅处理未登录：非 auth/landing/sso 时跳转登录页
+    if (!isSignedIn) {
+      const inAuthGroup = segments[0] === "(auth)";
+      const inLanding = segments[0] === "landing";
+      const inSSO = segments[0] === "sso-callback";
+      if (!inAuthGroup && !inLanding && !inSSO) {
+        router.replace("/landing");
+      }
     }
+    // 已登录用户的跳转由 app/index.tsx 处理（/ -> /(tabs)），此处不再重定向
   }, [isSignedIn, isLoaded, segments]);
 
   if (!isLoaded) {
@@ -66,13 +67,23 @@ function RootNavigator() {
   );
 }
 
+const clerkKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
 export default function RootLayout() {
+  if (!clerkKey?.trim()) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#0F172A", padding: 24, justifyContent: "center" }}>
+        <Text style={{ color: "#EF4444", fontSize: 16 }}>缺少 EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY，请在 .env 中配置</Text>
+      </View>
+    );
+  }
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ClerkProvider
-        publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
-        tokenCache={tokenCache}
-      >
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ClerkProvider
+          publishableKey={clerkKey}
+          tokenCache={Platform.OS === "web" ? undefined : tokenCache}
+        >
         <QueryClientProvider client={queryClient}>
           <SafeAreaProvider>
             <WebResponsiveWrapper>
@@ -83,5 +94,6 @@ export default function RootLayout() {
         </QueryClientProvider>
       </ClerkProvider>
     </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }

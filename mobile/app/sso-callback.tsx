@@ -1,12 +1,12 @@
 import { useAuth, useClerk } from "@clerk/clerk-expo";
-import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Platform, ActivityIndicator, Text, View } from "react-native";
+
+import { replacePath, replaceSignedInHome } from "@/lib/web-navigation";
 
 export default function SSOCallbackPage() {
   const { handleRedirectCallback } = useClerk();
   const { isSignedIn, isLoaded } = useAuth();
-  const router = useRouter();
   const [debugInfo, setDebugInfo] = useState("initializing...");
 
   // Step 1: Capture URL immediately on mount (before anything else runs)
@@ -28,7 +28,7 @@ export default function SSOCallbackPage() {
 
     if (isSignedIn) {
       // ClerkProvider already processed the handshake and established session.
-      router.replace("/(tabs)");
+      replaceSignedInHome();
       return;
     }
 
@@ -37,14 +37,14 @@ export default function SSOCallbackPage() {
       try {
         await handleRedirectCallback({});
         setDebugInfo("handleRedirectCallback succeeded");
-        router.replace("/(tabs)");
+        replaceSignedInHome();
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         setDebugInfo(`handleRedirectCallback FAILED: ${errMsg} | isSignedIn=${isSignedIn}`);
         // Don't redirect to landing if session might still be set via ClerkProvider.
         // Wait 1s for ClerkProvider to finish, then decide.
         setTimeout(() => {
-          router.replace("/landing");
+          replacePath("/landing");
         }, 1500);
       }
     })();

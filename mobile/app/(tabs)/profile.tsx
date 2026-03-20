@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-expo";
+import { pushPath } from "@/lib/web-navigation";
 
 type SettingRow = {
   icon: string;
@@ -77,7 +78,7 @@ export default function ProfileScreen() {
           iconColor: "#2563EB",
           iconBg: "bg-primary-500/15",
           label: "我的虚拟号码",
-          onPress: () => router.push("/voip" as never),
+          onPress: () => pushPath("/voip"),
         },
         {
           icon: "language-outline",
