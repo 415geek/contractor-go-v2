@@ -13,6 +13,11 @@ Phase 1 已完成以下基础能力：
 - `supabase/migrations/`: 数据库迁移
 - `supabase/functions/`: Edge Functions
 
+## 生产部署（配置 + 命令）
+
+**一页汇总**：[`docs/DEPLOY_QUICKSTART.md`](docs/DEPLOY_QUICKSTART.md)（Vercel 用户端/后台、Supabase Secrets、CLI）。  
+细节与域名：**[`docs/VERCEL_SETUP.md`](docs/VERCEL_SETUP.md)**；鉴权 401：**[`docs/DEBUG_AUTH.md`](docs/DEBUG_AUTH.md)**。
+
 ## 环境变量
 
 移动端环境变量参考 `mobile/.env.example`：
