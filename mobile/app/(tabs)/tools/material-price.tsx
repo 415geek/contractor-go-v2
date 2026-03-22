@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
   View,
@@ -9,66 +8,17 @@ import {
   Pressable,
   ActivityIndicator,
   Image,
-  Alert,
 } from "react-native";
 
 import { useAuth, useUser } from "@clerk/clerk-expo";
 
+import { alertCrossPlatform } from "@/lib/alert-cross-platform";
 import { ToolScreenHeader, useToolScrollBottomPadding } from "@/components/tools/ToolScreenChrome";
 import { MaterialResultCard } from "@/components/tools/MaterialResultCard";
 import { useMaterialSearch } from "@/hooks/useMaterialSearch";
-import { uploadToolImageViaEdge } from "@/lib/api/upload-tool-image";
-import { imageUriToBase64 } from "@/lib/image-base64";
-import { launchImageLibraryWeb, shouldUseWebFilePicker } from "@/lib/launch-image-library-web";
+import { isLocalImageUri, pickImageAsset, uploadPickedImage } from "@/lib/tool-image-pick";
 
 const MAX_IMAGES = 5;
-
-async function pickAndUploadImage(
-  getToken: () => Promise<string | null>,
-): Promise<{ url: string | null; error?: string }> {
-  // Web：任何 await 都会丢失用户手势，必须用同步触发的 <input type="file">（见 launch-image-library-web）
-  let result: ImagePicker.ImagePickerResult;
-  if (shouldUseWebFilePicker()) {
-    result = await launchImageLibraryWeb();
-  } else {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      return { url: null, error: "需要相册权限" };
-    }
-    result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      quality: 0.85,
-    });
-  }
-  if (result.canceled || !result.assets?.[0]?.uri) return { url: null };
-  const uri = result.assets[0].uri;
-  const asset = result.assets[0];
-  const ext = uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
-  const safeExt = ext.length > 5 ? "jpg" : ext;
-  const fileName = `photo.${safeExt}`;
-  const mime =
-    asset.mimeType && asset.mimeType.startsWith("image/")
-      ? asset.mimeType
-      : safeExt === "png"
-        ? "image/png"
-        : "image/jpeg";
-  try {
-    const token = await getToken();
-    if (!token) return { url: null, error: "请先登录" };
-    const base64 = await imageUriToBase64(uri);
-    const { publicUrl } = await uploadToolImageViaEdge(token, {
-      base64,
-      filename: fileName,
-      kind: "material",
-      contentType: mime,
-    });
-    return { url: publicUrl };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return { url: null, error: msg || "上传失败" };
-  }
-}
 
 export default function MaterialPriceScreen() {
   const scrollPad = useToolScrollBottomPadding();
@@ -77,16 +27,47 @@ export default function MaterialPriceScreen() {
   const { searchMaterial, isSearching, results, error, retry } = useMaterialSearch();
   const [imageUris, setImageUris] = useState<string[]>([]);
   const [description, setDescription] = useState("");
+  const [uploadingCount, setUploadingCount] = useState(0);
+  const isUploading = uploadingCount > 0;
 
   const handleSearch = async () => {
-    if (imageUris.length === 0 && !description.trim()) {
-      Alert.alert("提示", "请上传图片或输入描述");
+    const readyUrls = imageUris.filter((u) => u.startsWith("http"));
+    if (readyUrls.length === 0 && !description.trim()) {
+      alertCrossPlatform("提示", "请上传图片或输入描述");
+      return;
+    }
+    if (isUploading || imageUris.some(isLocalImageUri)) {
+      alertCrossPlatform("提示", "图片正在上传中，请稍候再搜索");
       return;
     }
     try {
-      await searchMaterial(imageUris, description.trim() || undefined);
-    } catch {
-      // error in state
+      await searchMaterial(readyUrls, description.trim() || undefined);
+    } catch (e) {
+      alertCrossPlatform("搜索失败", e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const handleAddImage = async () => {
+    if (!user?.id) {
+      alertCrossPlatform("提示", "请先登录后再上传图片");
+      return;
+    }
+    const result = await pickImageAsset();
+    if (result.canceled || !result.assets?.[0]?.uri) return;
+    const asset = result.assets[0];
+    const localUri = asset.uri;
+
+    setImageUris((prev) => [...prev, localUri].slice(0, MAX_IMAGES));
+    setUploadingCount((c) => c + 1);
+    try {
+      const { publicUrl } = await uploadPickedImage(getToken, localUri, asset, "material");
+      setImageUris((prev) => prev.map((u) => (u === localUri ? publicUrl : u)));
+    } catch (e) {
+      setImageUris((prev) => prev.filter((u) => u !== localUri));
+      const msg = e instanceof Error ? e.message : String(e);
+      alertCrossPlatform("上传失败", msg || "请检查网络后重试");
+    } finally {
+      setUploadingCount((c) => Math.max(0, c - 1));
     }
   };
 
@@ -102,22 +83,25 @@ export default function MaterialPriceScreen() {
           <Text className="mb-2 text-sm font-medium text-slate-400">上传图片（最多 {MAX_IMAGES} 张）</Text>
           <View className="flex-row flex-wrap gap-2">
             {imageUris.slice(0, MAX_IMAGES).map((uri, i) => (
-              <View key={i} className="h-20 w-20 overflow-hidden rounded-lg bg-slate-800">
-                <Image source={{ uri }} className="h-full w-full" resizeMode="cover" />
+              <View key={`${uri}-${i}`} className="h-20 w-20 overflow-hidden rounded-lg bg-slate-800">
+                <Image
+                  source={{ uri }}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="cover"
+                />
+                {isLocalImageUri(uri) ? (
+                  <View className="absolute inset-0 items-center justify-center bg-black/35">
+                    <ActivityIndicator color="#fff" />
+                  </View>
+                ) : null}
               </View>
             ))}
             {imageUris.length < MAX_IMAGES && (
               <Pressable
-                onPress={async () => {
-                  if (!user?.id) {
-                    Alert.alert("提示", "请先登录后再上传图片");
-                    return;
-                  }
-                  const { url, error: upErr } = await pickAndUploadImage(getToken);
-                  if (url) setImageUris((prev) => [...prev.slice(0, MAX_IMAGES - 1), url]);
-                  else if (upErr) Alert.alert("上传失败", upErr);
+                onPress={() => {
+                  void handleAddImage();
                 }}
-                className="h-20 w-20 items-center justify-center rounded-lg border border-dashed border-slate-600 bg-slate-800/50"
+                className="h-20 w-20 items-center justify-center rounded-lg border border-dashed border-slate-600 bg-slate-800/50 active:opacity-80"
               >
                 <Ionicons name="add" size={32} color="#64748B" />
               </Pressable>
@@ -135,8 +119,8 @@ export default function MaterialPriceScreen() {
           />
         </View>
         <Pressable
-          onPress={handleSearch}
-          disabled={isSearching}
+          onPress={() => void handleSearch()}
+          disabled={isSearching || isUploading}
           className="mb-6 rounded-xl bg-blue-600 py-3.5 disabled:opacity-50"
         >
           {isSearching ? (
