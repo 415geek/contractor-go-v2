@@ -29,12 +29,12 @@ function StatTile({
 }) {
   const ring =
     accent === "success"
-      ? "border-emerald-200 bg-emerald-50"
+      ? "border-emerald-500/35 bg-emerald-500/10"
       : accent === "primary"
-        ? "border-blue-200 bg-blue-50"
-        : "border-slate-200 bg-white";
+        ? "border-primary-500/35 bg-primary-500/10"
+        : "border-surface-border bg-surface-card";
   const numColor =
-    accent === "success" ? "text-emerald-600" : accent === "primary" ? "text-primary-600" : "text-ink";
+    accent === "success" ? "text-emerald-400" : accent === "primary" ? "text-primary-400" : "text-ink";
   return (
     <View className={`min-w-0 flex-1 rounded-2xl border px-3 py-3 shadow-sm ${ring}`}>
       <Text className="text-[11px] font-medium uppercase tracking-wide text-ink-tertiary">{label}</Text>
@@ -70,7 +70,7 @@ export default function HomeDashboardScreen() {
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor="#007AFF" />}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor="#00a3bf" />}
         contentContainerStyle={{ paddingBottom: BOTTOM_INSET }}
       >
         {/* 顶栏 */}
@@ -83,8 +83,8 @@ export default function HomeDashboardScreen() {
               className="flex-row items-center gap-1.5 rounded-full bg-primary-500/12 px-3 py-1.5 active:opacity-70"
               hitSlop={8}
             >
-              <Ionicons name="call-outline" size={16} color="#007AFF" />
-              <Text className="text-xs font-semibold text-primary-600">虚拟号码</Text>
+              <Ionicons name="call-outline" size={16} color="#1e90ff" />
+              <Text className="text-xs font-semibold text-electric-400">虚拟号码</Text>
             </Pressable>
           </View>
         </View>
@@ -104,11 +104,11 @@ export default function HomeDashboardScreen() {
           <Text className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-tertiary">现场</Text>
           <Pressable
             onPress={() => router.push("/home/monitoring" as never)}
-            className="overflow-hidden rounded-3xl border border-cyan-200 bg-cyan-50 active:opacity-90"
+            className="overflow-hidden rounded-3xl border border-primary-500/30 bg-primary-500/10 active:opacity-90"
           >
             <View className="flex-row items-center p-5">
-              <View className="mr-4 h-14 w-14 items-center justify-center rounded-2xl bg-cyan-100">
-                <Ionicons name="videocam" size={30} color="#0891B2" />
+              <View className="mr-4 h-14 w-14 items-center justify-center rounded-2xl bg-primary-500/20">
+                <Ionicons name="videocam" size={30} color="#00d4e8" />
               </View>
               <View className="min-w-0 flex-1">
                 <Text className="text-lg font-bold text-ink">工地监控</Text>
@@ -116,7 +116,7 @@ export default function HomeDashboardScreen() {
                   查看各工地摄像头实况、录影与对讲
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={22} color="#8E8E93" />
+              <Ionicons name="chevron-forward" size={22} color="#8e9aaf" />
             </View>
           </Pressable>
         </View>
@@ -126,17 +126,17 @@ export default function HomeDashboardScreen() {
           <View className="mb-3 flex-row items-center justify-between">
             <Text className="text-xs font-semibold uppercase tracking-wider text-ink-tertiary">我的项目</Text>
             <Pressable onPress={() => router.push("/projects")} hitSlop={8}>
-              <Text className="text-sm font-semibold text-primary-600">全部</Text>
+              <Text className="text-sm font-semibold text-primary-400">全部</Text>
             </Pressable>
           </View>
 
           {isLoading && projects.length === 0 ? (
             <View className="items-center py-16">
-              <ActivityIndicator size="large" color="#007AFF" />
+              <ActivityIndicator size="large" color="#00a3bf" />
             </View>
           ) : preview.length === 0 ? (
-            <View className="items-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12">
-              <Ionicons name="cube-outline" size={40} color="#C7C7CC" />
+            <View className="items-center rounded-2xl border border-dashed border-surface-border bg-surface-card px-6 py-12">
+              <Ionicons name="cube-outline" size={40} color="#64748b" />
               <Text className="mt-3 text-center text-base font-semibold text-ink">暂无项目</Text>
               <Text className="mt-1 text-center text-sm text-ink-secondary">创建项目后，将在这里快速打开</Text>
               <Pressable
@@ -156,16 +156,16 @@ export default function HomeDashboardScreen() {
         </View>
 
         {/* 次要入口：消息 */}
-        <View className="mx-5 mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
+        <View className="mx-5 mb-4 rounded-2xl border border-surface-border bg-surface-card p-4 shadow-card">
           <Pressable onPress={() => router.push("/")} className="flex-row items-center active:opacity-70">
-            <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
-              <Ionicons name="chatbubbles-outline" size={20} color="#007AFF" />
+            <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl bg-surface-elevated">
+              <Ionicons name="chatbubbles-outline" size={20} color="#1e90ff" />
             </View>
             <View className="min-w-0 flex-1">
               <Text className="font-semibold text-ink">客户消息</Text>
               <Text className="text-xs text-ink-secondary">与业主的会话与翻译</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
+            <Ionicons name="chevron-forward" size={18} color="#8e9aaf" />
           </Pressable>
         </View>
       </ScrollView>

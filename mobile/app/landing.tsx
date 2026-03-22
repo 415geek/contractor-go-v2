@@ -19,7 +19,7 @@ type Feature = {
 
 function FeatureCard({ icon, color, bg, title, desc }: Feature) {
   return (
-    <View className="min-w-0 flex-1 rounded-[22px] border border-slate-200/90 bg-white p-5 shadow-card">
+    <View className="min-w-0 flex-1 rounded-[22px] border border-surface-border bg-surface-card p-5 shadow-card">
       <View className={`mb-4 h-11 w-11 items-center justify-center rounded-[14px] ${bg}`}>
         <Ionicons name={icon as "language-outline"} size={22} color={color} />
       </View>
@@ -40,16 +40,16 @@ function LangPicker() {
     <>
       <Pressable
         onPress={() => setOpen(true)}
-        className="flex-row items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2 shadow-sm active:opacity-70"
+        className="flex-row items-center gap-1.5 rounded-full border border-surface-border bg-surface-card px-3.5 py-2 shadow-sm active:opacity-70"
       >
         <Text className="text-base">{current.flag}</Text>
         <Text className="text-[13px] font-medium text-ink">{current.label}</Text>
-        <Ionicons name="chevron-down" size={14} color="#8E8E93" />
+        <Ionicons name="chevron-down" size={14} color="#8e9aaf" />
       </Pressable>
 
       <Modal transparent animationType="fade" visible={open} onRequestClose={() => setOpen(false)}>
         <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setOpen(false)}>
-          <View className="rounded-t-[28px] border-t border-slate-200 bg-white px-6 pb-10 pt-6 shadow-elevated">
+          <View className="rounded-t-[28px] border-t border-surface-border bg-surface-card px-6 pb-10 pt-6 shadow-elevated">
             <Text className="mb-5 text-[17px] font-semibold text-ink">{t.langLabel}</Text>
             {LANG_OPTIONS.map((opt) => (
               <Pressable
@@ -61,12 +61,12 @@ function LangPicker() {
                 className={`mb-2 flex-row items-center gap-3 rounded-2xl px-4 py-3.5 active:opacity-80 ${
                   lang === opt.code
                     ? "border border-primary-500/35 bg-primary-500/10"
-                    : "border border-slate-100 bg-slate-50"
+                    : "border border-surface-border bg-surface-elevated"
                 }`}
               >
                 <Text className="text-2xl">{opt.flag}</Text>
                 <Text className="flex-1 text-[16px] font-medium text-ink">{opt.label}</Text>
-                {lang === opt.code && <Ionicons name="checkmark-circle" size={22} color="#007AFF" />}
+                {lang === opt.code && <Ionicons name="checkmark-circle" size={22} color="#1e90ff" />}
               </Pressable>
             ))}
           </View>
@@ -130,8 +130,8 @@ export default function LandingScreen() {
   const features: Feature[] = [
     {
       icon: "language-outline",
-      color: "#007AFF",
-      bg: "bg-primary-500/12",
+      color: "#1e90ff",
+      bg: "bg-electric-500/15",
       title: t.feature1Title,
       desc: t.feature1Desc,
     },
@@ -177,7 +177,7 @@ export default function LandingScreen() {
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
           <View className="px-6 pt-4">
             {/* Hero — Proma 风格：主色蓝 + 柔和装饰 */}
-            <View className="relative mb-10 overflow-hidden rounded-[32px] bg-[#007AFF] px-7 pb-9 pt-10 shadow-button-lg">
+            <View className="relative mb-10 overflow-hidden rounded-[32px] bg-[#00a3bf] px-7 pb-9 pt-10 shadow-button-lg">
               <View className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/15" />
               <View className="absolute -bottom-10 -left-10 h-36 w-36 rounded-full bg-[#5856D6]/35" />
               <View className="absolute bottom-8 right-6 h-24 w-24 rounded-full bg-white/10" />
@@ -204,7 +204,7 @@ export default function LandingScreen() {
             </View>
 
             {/* Languages */}
-            <View className="mb-10 rounded-[22px] border border-slate-200 bg-white px-6 py-5 shadow-card">
+            <View className="mb-10 rounded-[22px] border border-surface-border bg-surface-card px-6 py-5 shadow-card">
               <Text className="mb-1 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-tertiary">
                 {t.languagesLabel}
               </Text>
@@ -230,10 +230,10 @@ export default function LandingScreen() {
             <Text className="mb-4 px-1 text-[13px] font-semibold uppercase tracking-[0.12em] text-ink-tertiary">
               {t.sectionStories}
             </Text>
-            <View className="mb-8 rounded-[22px] border border-slate-200 bg-white p-6 shadow-card">
+            <View className="mb-8 rounded-[22px] border border-surface-border bg-surface-card p-6 shadow-card">
               <View className="flex-row items-start gap-4">
                 <View className="h-11 w-11 items-center justify-center rounded-full bg-primary-500/12">
-                  <Text className="text-[15px] font-semibold text-primary-600">{t.testimonialInitial}</Text>
+                  <Text className="text-[15px] font-semibold text-primary-400">{t.testimonialInitial}</Text>
                 </View>
                 <View className="min-w-0 flex-1">
                   <Text className="text-[15px] font-semibold text-ink">{t.testimonialName}</Text>
@@ -257,7 +257,7 @@ export default function LandingScreen() {
                 className="min-h-[52px] items-center justify-center rounded-full bg-primary-500 active:bg-primary-600"
                 style={{
                   transform: [{ scale: scaleAnim }],
-                  shadowColor: "#007AFF",
+                  shadowColor: "#00a3bf",
                   shadowOffset: { width: 0, height: 8 },
                   shadowOpacity: 0.3,
                   shadowRadius: 16,
@@ -268,9 +268,9 @@ export default function LandingScreen() {
             </Pressable>
             <Pressable
               onPress={() => router.push("/(auth)/login")}
-              className="mt-4 min-h-[48px] items-center justify-center rounded-full border border-slate-300 bg-white active:bg-slate-50"
+              className="mt-4 min-h-[48px] items-center justify-center rounded-full border border-surface-border bg-surface-elevated active:bg-surface-highlight"
             >
-              <Text className="text-[15px] text-primary-600">{t.loginBtn}</Text>
+              <Text className="text-[15px] text-primary-400">{t.loginBtn}</Text>
             </Pressable>
           </View>
         </Animated.View>

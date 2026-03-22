@@ -191,7 +191,7 @@ export default function VerifyScreen() {
             <Pressable
               onPress={() => void handleResend()}
               disabled={countdown > 0 || loading}
-              className="min-h-touch items-center justify-center rounded-auth-button border border-slate-200 bg-white px-5 py-3.5 active:bg-slate-50 disabled:opacity-50"
+              className="min-h-touch items-center justify-center rounded-auth-button border border-surface-border bg-surface-card px-5 py-3.5 active:bg-surface-elevated disabled:opacity-50"
             >
               <Text className="text-base font-semibold text-ink">重新发送验证码</Text>
             </Pressable>

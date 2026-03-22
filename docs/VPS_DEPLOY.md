@@ -60,7 +60,7 @@ server {
 
 2. 在 VPS 上把对应**公钥**写入 `~/.ssh/authorized_keys`（GitHub Actions 用该私钥 SSH 登录）。
 
-3. 每次向 `main` 推送且变更了 `mobile/` 等路径时，工作流会执行 `/usr/local/bin/contractor-web-deploy.sh`。
+3. **每次向 `main` 推送**（任意文件）都会触发工作流，在 VPS 上执行 `/usr/local/bin/contractor-web-deploy.sh`（直接部署）。也可在 Actions 里手动 **Run workflow**。
 
 ## 四、环境变量覆盖（可选）
 

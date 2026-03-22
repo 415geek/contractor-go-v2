@@ -56,13 +56,13 @@ export default function SSOCallbackPage() {
     <View
       style={{
         flex: 1,
-        backgroundColor: "#0F172A",
+        backgroundColor: "#0a0e17",
         alignItems: "center",
         justifyContent: "center",
         padding: 24,
       }}
     >
-      <ActivityIndicator size="large" color="#2563EB" />
+      <ActivityIndicator size="large" color="#00a3bf" />
       <Text style={{ color: "#94A3B8", marginTop: 16, textAlign: "center", fontSize: 12 }}>
         {debugInfo}
       </Text>

@@ -5,6 +5,8 @@ import { BlurView } from "expo-blur";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { theme } from "@/lib/theme";
+
 const TAB_ORDER = ["index", "projects", "home", "tools", "profile"] as const;
 
 type TabName = (typeof TAB_ORDER)[number];
@@ -19,6 +21,9 @@ const TAB_META: Record<
   profile: { label: "我的", icon: "person-outline", iconActive: "person" },
 };
 
+const INACTIVE = "#8e9aaf";
+const ACTIVE = theme.electric;
+
 function triggerHaptic() {
   if (Platform.OS === "ios") {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -26,7 +31,7 @@ function triggerHaptic() {
 }
 
 /**
- * 底部 Tab：中间凸起圆形「首页」，其余为常规项（iOS 风格模糊底栏）。
+ * 底部 Tab：深色底栏 + 中间凸起圆形「首页」（电蓝外发光，与物业信息系一致）
  */
 export function CenterHomeTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -37,9 +42,9 @@ export function CenterHomeTabBar({ state, descriptors, navigation }: BottomTabBa
   return (
     <View pointerEvents="box-none" style={[styles.wrapper, { height: barHeight + 18 }]}>
       {Platform.OS === "ios" ? (
-        <BlurView intensity={90} tint="light" style={[StyleSheet.absoluteFill, { height: barHeight }]} />
+        <BlurView intensity={80} tint="dark" style={[StyleSheet.absoluteFill, { height: barHeight }]} />
       ) : (
-        <View style={[StyleSheet.absoluteFill, { height: barHeight, backgroundColor: "rgba(255, 255, 255, 0.96)" }]} />
+        <View style={[StyleSheet.absoluteFill, { height: barHeight, backgroundColor: "rgba(10, 14, 23, 0.96)" }]} />
       )}
       <View
         style={[
@@ -47,7 +52,7 @@ export function CenterHomeTabBar({ state, descriptors, navigation }: BottomTabBa
           {
             height: barHeight,
             paddingBottom: bottomPad,
-            borderTopColor: "rgba(0,0,0,0.06)",
+            borderTopColor: "rgba(255,255,255,0.08)",
           },
         ]}
       >
@@ -81,7 +86,7 @@ export function CenterHomeTabBar({ state, descriptors, navigation }: BottomTabBa
                 >
                   <Ionicons name="home" size={28} color="#FFFFFF" />
                 </Pressable>
-                <Text style={[styles.homeLabel, { color: focused ? "#007AFF" : "#8E8E93" }]} numberOfLines={1}>
+                <Text style={[styles.homeLabel, { color: focused ? ACTIVE : INACTIVE }]} numberOfLines={1}>
                   首页
                 </Text>
               </View>
@@ -90,7 +95,7 @@ export function CenterHomeTabBar({ state, descriptors, navigation }: BottomTabBa
 
           const meta = TAB_META[name];
           const { options } = descriptors[route.key];
-          const color = focused ? "#007AFF" : "#8E8E93";
+          const color = focused ? ACTIVE : INACTIVE;
           const iconName = focused ? meta.iconActive : meta.icon;
 
           return (
@@ -131,7 +136,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(0,0,0,0.06)",
+    borderTopColor: "rgba(255,255,255,0.08)",
     overflow: "visible",
   },
   row: {
@@ -156,18 +161,18 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     borderRadius: 29,
-    backgroundColor: "#007AFF",
+    backgroundColor: theme.electric,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 2,
     marginTop: -26,
-    shadowColor: "#007AFF",
+    shadowColor: theme.electric,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
     elevation: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.35)",
+    borderColor: "rgba(255,255,255,0.25)",
   },
   homeLabel: {
     fontSize: 10,

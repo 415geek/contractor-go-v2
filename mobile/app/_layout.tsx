@@ -89,7 +89,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <SafeAreaProvider>
             <WebResponsiveWrapper>
-              <StatusBar style="dark" />
+              <StatusBar style="light" />
               <RootNavigator />
             </WebResponsiveWrapper>
           </SafeAreaProvider>

@@ -233,7 +233,7 @@ export default function LoginScreen() {
             className="flex-row items-center gap-1 mb-6 self-start active:opacity-70"
             hitSlop={12}
           >
-            <Ionicons name="chevron-back" size={18} color="#8E8E93" />
+            <Ionicons name="chevron-back" size={18} color="#8e9aaf" />
             <Text className="text-ink-secondary text-sm">Contractor GO</Text>
           </Pressable>
 
@@ -243,14 +243,14 @@ export default function LoginScreen() {
           </View>
 
           {/* Tab 切换 */}
-          <View className="flex-row bg-slate-100 rounded-xl p-1 mb-6">
+          <View className="flex-row rounded-xl bg-surface-elevated p-1 mb-6">
             {(["phone", "email"] as Tab[]).map((t) => (
               <Pressable
                 key={t}
                 onPress={() => setTab(t)}
-                className={`flex-1 py-2 rounded-lg items-center ${tab === t ? "bg-white shadow-sm" : ""}`}
+                className={`flex-1 py-2 rounded-lg items-center ${tab === t ? "bg-surface-highlight shadow-sm" : ""}`}
               >
-                <Text className={`text-sm font-semibold ${tab === t ? "text-primary-600" : "text-ink-secondary"}`}>
+                <Text className={`text-sm font-semibold ${tab === t ? "text-primary-400" : "text-ink-secondary"}`}>
                   {t === "phone" ? L.tabPhone : L.tabEmail}
                 </Text>
               </Pressable>
@@ -300,8 +300,8 @@ export default function LoginScreen() {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     placeholder={L.emailPlaceholder}
-                    placeholderTextColor="#C7C7CC"
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-ink text-base"
+                    placeholderTextColor="#64748b"
+                    className="rounded-xl border border-surface-border bg-surface-card px-4 py-3.5 text-ink text-base"
                   />
                 </View>
                 <View>
@@ -311,8 +311,8 @@ export default function LoginScreen() {
                     onChangeText={setPassword}
                     secureTextEntry
                     placeholder={L.passwordPlaceholder}
-                    placeholderTextColor="#C7C7CC"
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-ink text-base"
+                    placeholderTextColor="#64748b"
+                    className="rounded-xl border border-surface-border bg-surface-card px-4 py-3.5 text-ink text-base"
                   />
                 </View>
               </View>
@@ -339,15 +339,15 @@ export default function LoginScreen() {
           {/* 社交登录 */}
           <View className="mt-auto pt-6">
             <View className="flex-row items-center gap-3 mb-4">
-              <View className="flex-1 h-px bg-slate-200" />
+              <View className="flex-1 h-px bg-surface-border" />
               <Text className="text-ink-tertiary text-xs">{L.orContinueWith}</Text>
-              <View className="flex-1 h-px bg-slate-200" />
+              <View className="flex-1 h-px bg-surface-border" />
             </View>
             <View className="flex-row gap-3">
               <Pressable
                 onPress={() => void handleOAuth("google")}
                 disabled={loading}
-                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3.5 active:bg-slate-50 disabled:opacity-50"
+                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-surface-border bg-surface-elevated py-3.5 active:bg-surface-highlight disabled:opacity-50"
               >
                 <Ionicons name="logo-google" size={18} color="#EA4335" />
                 <Text className="text-ink text-sm font-semibold">Google</Text>
@@ -355,9 +355,9 @@ export default function LoginScreen() {
               <Pressable
                 onPress={() => void handleOAuth("github")}
                 disabled={loading}
-                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3.5 active:bg-slate-50 disabled:opacity-50"
+                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-surface-border bg-surface-elevated py-3.5 active:bg-surface-highlight disabled:opacity-50"
               >
-                <Ionicons name="logo-github" size={18} color="#1C1C1E" />
+                <Ionicons name="logo-github" size={18} color="#e2e8f0" />
                 <Text className="text-ink text-sm font-semibold">GitHub</Text>
               </Pressable>
             </View>

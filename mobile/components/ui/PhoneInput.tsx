@@ -45,13 +45,13 @@ export function PhoneInput({
     <View className="gap-2">
       <Text className="text-sm font-medium text-ink">手机号</Text>
       <View
-        className={`flex-row items-center rounded-auth-input border bg-white px-4 py-3 ${
+        className={`flex-row items-center rounded-auth-input border bg-surface-card px-4 py-3 ${
           isFocused ? "border-primary-500" : "border-surface-border"
         }`}
       >
         <Pressable
           onPress={() => setIsModalVisible(true)}
-          className="mr-3 min-h-[40px] min-w-[56px] items-center justify-center rounded-lg bg-slate-100 px-3 py-2"
+          className="mr-3 min-h-[40px] min-w-[56px] items-center justify-center rounded-lg bg-surface-elevated px-3 py-2"
           accessibilityLabel="选择国家区号"
           accessibilityRole="button"
         >
@@ -64,7 +64,7 @@ export function PhoneInput({
           onBlur={onBlur}
           keyboardType="phone-pad"
           placeholder="请输入手机号"
-          placeholderTextColor="#C7C7CC"
+          placeholderTextColor="#64748b"
           className="flex-1 text-base text-ink"
           maxLength={15}
         />
@@ -90,7 +90,7 @@ export function PhoneInput({
           className="flex-1 justify-end bg-black/60"
           onPress={() => setIsModalVisible(false)}
         >
-          <View className="rounded-t-3xl border-t border-slate-200 bg-white p-6 pb-8">
+          <View className="rounded-t-3xl border-t border-surface-border bg-surface-card p-6 pb-8">
             <Text className="mb-4 text-lg font-semibold text-ink">选择区号</Text>
             {COUNTRY_OPTIONS.map((option) => (
               <Pressable
@@ -99,7 +99,7 @@ export function PhoneInput({
                   onCountryCodeChange(option.code);
                   setIsModalVisible(false);
                 }}
-                className="mb-2 min-h-touch items-center justify-center rounded-xl bg-slate-50 px-4 py-3 active:bg-slate-100"
+                className="mb-2 min-h-touch items-center justify-center rounded-xl bg-surface-elevated px-4 py-3 active:bg-surface-highlight"
               >
                 <Text className="text-base font-medium text-ink">
                   {option.code} · {option.label}

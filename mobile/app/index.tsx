@@ -8,7 +8,7 @@ export default function IndexScreen() {
   if (!isLoaded) {
     return (
       <View className="flex-1 items-center justify-center bg-surface-app">
-        <ActivityIndicator color="#007AFF" size="large" />
+        <ActivityIndicator color="#00a3bf" size="large" />
       </View>
     );
   }

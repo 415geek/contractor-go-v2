@@ -110,4 +110,4 @@ bash -lc '/usr/local/bin/contractor-web-deploy.sh'
 ## 六、与本仓库的衔接
 
 - 部署脚本：[scripts/deploy-vps.sh](../scripts/deploy-vps.sh)（服务器上拷贝为 `/usr/local/bin/contractor-web-deploy.sh`）
-- GitHub Actions 自动部署：[.github/workflows/deploy-vps.yml](../.github/workflows/deploy-vps.yml)（与 n8n 二选一或并存，避免重复触发）
+- GitHub Actions 自动部署：[.github/workflows/deploy-vps.yml](../.github/workflows/deploy-vps.yml)（**push 到 main 即部署**；与 n8n 二选一或并存，注意避免短时间内重复触发）

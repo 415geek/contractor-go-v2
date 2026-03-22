@@ -39,7 +39,7 @@ export function ChatInput({ onSend, disabled, sourceLang = "zh-CN", targetLang =
   };
 
   return (
-    <View className="border-t border-slate-200 bg-white p-3">
+    <View className="border-t border-surface-border bg-surface-app p-3">
       {text.trim() && (
         <View className="mb-2 px-2">
           <Text className="text-ink-tertiary text-xs">翻译预览</Text>
@@ -57,11 +57,11 @@ export function ChatInput({ onSend, disabled, sourceLang = "zh-CN", targetLang =
           value={text}
           onChangeText={setText}
           placeholder="输入消息..."
-          placeholderTextColor="#C7C7CC"
+          placeholderTextColor="#64748b"
           multiline
           maxLength={500}
           editable={!disabled}
-          className="flex-1 bg-slate-100 text-ink rounded-xl px-4 py-3 max-h-24 border border-slate-200"
+          className="flex-1 border border-surface-border bg-surface-card text-ink rounded-xl px-4 py-3 max-h-24"
         />
         <Pressable
           onPress={handleSend}

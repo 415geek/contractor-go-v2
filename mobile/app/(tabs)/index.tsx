@@ -52,7 +52,7 @@ export default function MessagesIndexScreen() {
   if (isLoading && conversations.length === 0) {
     return (
       <View className="flex-1 bg-surface-app items-center justify-center">
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#00a3bf" />
       </View>
     );
   }
@@ -63,11 +63,11 @@ export default function MessagesIndexScreen() {
       <View className="flex-row items-center justify-between px-4 pt-2 pb-3">
         <Text className="text-2xl font-bold text-ink">消息</Text>
         <Pressable
-          className="w-10 h-10 rounded-full bg-slate-100 items-center justify-center active:opacity-70"
+          className="w-10 h-10 rounded-full bg-surface-elevated items-center justify-center active:opacity-70"
           accessibilityLabel="搜索"
           hitSlop={8}
         >
-          <Ionicons name="search-outline" size={20} color="#8E8E93" />
+          <Ionicons name="search-outline" size={20} color="#8e9aaf" />
         </Pressable>
       </View>
 
@@ -93,8 +93,8 @@ export default function MessagesIndexScreen() {
       {/* 对话列表 / 空状态 */}
       {conversations.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
-          <View className="w-20 h-20 rounded-full bg-slate-100 items-center justify-center mb-4">
-            <Ionicons name="chatbubbles-outline" size={40} color="#C7C7CC" />
+          <View className="w-20 h-20 rounded-full bg-surface-elevated items-center justify-center mb-4">
+            <Ionicons name="chatbubbles-outline" size={40} color="#64748b" />
           </View>
           <Text className="text-ink text-lg font-semibold text-center">还没有对话</Text>
           <Text className="text-ink-secondary text-sm text-center mt-2 leading-relaxed">
@@ -112,7 +112,7 @@ export default function MessagesIndexScreen() {
           data={conversations}
           keyExtractor={(item) => item.id}
           refreshControl={
-            <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor="#007AFF" />
+            <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor="#00a3bf" />
           }
           renderItem={({ item }) => {
             const displayName = item.contact_name || item.contact_phone;
@@ -122,7 +122,7 @@ export default function MessagesIndexScreen() {
             return (
               <Pressable
                 onPress={() => router.push(`/conversation/${item.id}`)}
-                className="flex-row items-center px-4 py-3.5 border-b border-slate-100 active:bg-slate-50"
+                className="flex-row items-center px-4 py-3.5 border-b border-surface-border active:bg-surface-elevated"
               >
                 {/* 头像 */}
                 <View className={`w-12 h-12 rounded-full ${avatarBg} items-center justify-center flex-shrink-0`}>
@@ -145,7 +145,7 @@ export default function MessagesIndexScreen() {
                     <Text className="text-ink-secondary text-sm flex-1" numberOfLines={1}>
                       {item.contact_phone}
                     </Text>
-                    <View className="bg-slate-100 px-1.5 py-0.5 rounded">
+                    <View className="rounded bg-surface-elevated px-1.5 py-0.5">
                       <Text className="text-ink-secondary text-xs font-medium">
                         {langCode}
                       </Text>
@@ -153,7 +153,7 @@ export default function MessagesIndexScreen() {
                   </View>
                 </View>
 
-                <Ionicons name="chevron-forward" size={16} color="#C7C7CC" style={{ marginLeft: 8 }} />
+                <Ionicons name="chevron-forward" size={16} color="#64748b" style={{ marginLeft: 8 }} />
               </Pressable>
             );
           }}
@@ -163,7 +163,7 @@ export default function MessagesIndexScreen() {
       {/* 悬浮新建按钮 */}
       <Pressable
         onPress={() => router.push("/conversation/new" as never)}
-        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-primary-500 items-center justify-center active:bg-primary-600 shadow-button-lg"
+        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-electric-500 items-center justify-center active:bg-electric-600 shadow-button-lg"
         accessibilityLabel="新建对话"
       >
         <Ionicons name="add" size={28} color="white" />

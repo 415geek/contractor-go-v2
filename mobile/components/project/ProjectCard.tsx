@@ -49,13 +49,13 @@ export function ProjectCard({ project }: Props) {
   return (
     <Pressable
       onPress={() => router.push(`/project/${project.id}`)}
-      className="rounded-xl border border-slate-200 bg-white p-4 shadow-card active:bg-slate-50"
+      className="rounded-xl border border-surface-border bg-surface-card p-4 shadow-card active:bg-surface-elevated"
     >
       {/* 标题行 */}
       <View className="flex-row items-start justify-between gap-2">
         <View className="flex-row items-center gap-2 flex-1 min-w-0">
           <View className="w-8 h-8 rounded-lg bg-primary-500/12 items-center justify-center flex-shrink-0">
-            <Ionicons name={iconName} size={16} color="#007AFF" />
+            <Ionicons name={iconName} size={16} color="#1e90ff" />
           </View>
           <Text className="flex-1 text-base font-semibold text-ink" numberOfLines={1}>
             {project.name}

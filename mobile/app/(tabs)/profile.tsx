@@ -34,7 +34,7 @@ function SettingItem({ row }: { row: SettingRow }) {
   return (
     <Pressable
       onPress={row.onPress}
-      className={`flex-row items-center px-4 py-3.5 active:bg-slate-50 ${row.danger ? "" : ""}`}
+      className={`flex-row items-center px-4 py-3.5 active:bg-surface-elevated ${row.danger ? "" : ""}`}
     >
       <View className={`w-8 h-8 rounded-lg ${row.iconBg} items-center justify-center mr-3`}>
         <Ionicons name={row.icon as any} size={16} color={row.iconColor} />
@@ -161,7 +161,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* 用户信息卡片 */}
-        <View className="mx-4 mb-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+        <View className="mx-4 mb-4 rounded-2xl border border-surface-border bg-surface-card p-5 shadow-card">
           <View className="flex-row items-center gap-4">
             {/* 头像 */}
             <View className="w-16 h-16 rounded-full bg-primary-500 items-center justify-center">
@@ -175,28 +175,28 @@ export default function ProfileScreen() {
               <Text className="text-ink-secondary text-sm mt-0.5">{displayPhone}</Text>
             </View>
             <Pressable
-              className="w-9 h-9 rounded-full bg-slate-100 items-center justify-center active:opacity-70"
+              className="w-9 h-9 rounded-full bg-surface-elevated items-center justify-center active:opacity-70"
               accessibilityLabel="编辑资料"
             >
-              <Ionicons name="create-outline" size={18} color="#8E8E93" />
+              <Ionicons name="create-outline" size={18} color="#8e9aaf" />
             </Pressable>
           </View>
 
           {/* 统计数据 */}
-          <View className="mt-4 pt-4 border-t border-slate-100 flex-row">
+          <View className="mt-4 pt-4 border-t border-surface-border flex-row">
             <StatCard label="项目数" value="0" />
-            <View className="w-px bg-slate-200" />
+            <View className="w-px bg-surface-border" />
             <StatCard label="总金额" value="$0" />
-            <View className="w-px bg-slate-200" />
+            <View className="w-px bg-surface-border" />
             <StatCard label="好评率" value="—" />
           </View>
         </View>
 
         {/* 订阅状态卡片 */}
         <Pressable
-          className="mx-4 mb-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 flex-row items-center gap-3 active:bg-orange-100"
+          className="mx-4 mb-4 rounded-2xl border border-accent-500/35 bg-accent-500/10 p-4 flex-row items-center gap-3 active:bg-accent-500/15"
         >
-          <View className="w-10 h-10 rounded-xl bg-orange-100 items-center justify-center">
+          <View className="w-10 h-10 rounded-xl bg-accent-500/20 items-center justify-center">
             <Ionicons name="star" size={20} color="#F97316" />
           </View>
           <View className="flex-1">
@@ -214,10 +214,10 @@ export default function ProfileScreen() {
             <Text className="px-4 mb-1 text-xs font-semibold uppercase tracking-wider text-ink-tertiary">
               {section.title}
             </Text>
-            <View className="mx-4 rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-card">
+            <View className="mx-4 rounded-2xl border border-surface-border bg-surface-card overflow-hidden shadow-card">
               {section.rows.map((row, rIdx) => (
                 <View key={rIdx}>
-                  {rIdx > 0 && <View className="h-px bg-slate-100 mx-4" />}
+                  {rIdx > 0 && <View className="h-px bg-surface-border mx-4" />}
                   <SettingItem row={row} />
                 </View>
               ))}

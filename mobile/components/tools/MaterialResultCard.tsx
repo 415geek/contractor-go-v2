@@ -5,19 +5,20 @@ import type { MaterialSearchHit } from "@/lib/nova-act-search";
 
 type Props = { item: MaterialSearchHit };
 
-const STOCK_STYLE: Record<string, { bg: string; label: string }> = {
-  in_stock: { bg: "bg-emerald-100", label: "有现货" },
-  out_of_stock: { bg: "bg-red-100", label: "无现货" },
-  unknown: { bg: "bg-slate-100", label: "库存不详" },
+const STOCK_STYLE: Record<string, { bg: string; label: string; text: string }> = {
+  in_stock: { bg: "bg-emerald-500/20", label: "有现货", text: "text-emerald-300" },
+  out_of_stock: { bg: "bg-red-500/20", label: "无现货", text: "text-red-300" },
+  unknown: { bg: "bg-surface-elevated", label: "库存不详", text: "text-ink-tertiary" },
 };
 
 export function MaterialResultCard({ item }: Props) {
   const style = STOCK_STYLE[item.stock_status] ?? STOCK_STYLE.unknown;
+  const stockText = style.text;
 
   return (
-    <View className="rounded-xl border border-slate-200 bg-white p-4 shadow-card">
+    <View className="rounded-xl border border-surface-border bg-surface-card p-4 shadow-card">
       {item.image_url ? (
-        <View className="mb-3 h-20 w-full overflow-hidden rounded-lg bg-slate-100">
+        <View className="mb-3 h-20 w-full overflow-hidden rounded-lg bg-surface-elevated">
           <Image
             source={{ uri: item.image_url }}
             style={{ height: "100%", width: "100%" }}
@@ -34,7 +35,7 @@ export function MaterialResultCard({ item }: Props) {
       <Text className="mt-0.5 text-sm text-ink-secondary">{item.store}</Text>
       <View className="mt-2 flex-row items-center justify-between">
         <View className={`rounded-lg px-2 py-1 ${style.bg}`}>
-          <Text className="text-xs font-medium text-ink">
+          <Text className={`text-xs font-medium ${stockText}`}>
             {style.label}
           </Text>
         </View>

@@ -48,9 +48,9 @@ export function SfPimEmbeddedMap({ uri }: Props) {
     <View className="flex-1 bg-slate-950">
       {loading && !error ? (
         <View className="absolute inset-0 z-10 items-center justify-center bg-slate-950/95">
-          <ActivityIndicator color="#60A5FA" size="large" />
+          <ActivityIndicator color="#00a3bf" size="large" />
           <Text className="mt-3 px-6 text-center text-xs text-slate-500">
-            正在加载规划局地图（页面较大，可能需要 20 秒以上）…
+            正在加载官方地图（页面较大，约需十余秒）…
           </Text>
         </View>
       ) : null}
@@ -59,7 +59,7 @@ export function SfPimEmbeddedMap({ uri }: Props) {
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-center text-sm text-slate-400">{error}</Text>
           <Text className="mt-2 text-center text-xs text-slate-600">
-            请使用页面上方「在系统浏览器中打开」。
+            可点击查询框右侧小图标在系统浏览器中打开完整页面。
           </Text>
         </View>
       ) : (
@@ -104,7 +104,7 @@ export function SfPimEmbeddedMap({ uri }: Props) {
       {slowHint && !error ? (
         <View className="absolute bottom-1 left-1 right-1 rounded-lg bg-slate-900/90 px-2 py-1.5">
           <Text className="text-center text-2xs text-amber-200/90">
-            若地图仍为空白或无法操作，请点上方「浏览器打开」使用完整版（推荐）。
+            若仍空白或卡顿，可点查询框旁「外链」图标用浏览器打开。
           </Text>
         </View>
       ) : null}
