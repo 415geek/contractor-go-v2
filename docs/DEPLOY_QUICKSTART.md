@@ -35,7 +35,7 @@
 - **anon public** → 填 `EXPO_PUBLIC_SUPABASE_ANON_KEY` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - **service_role** → 仅服务端：Supabase Edge Secrets（多数自动注入）、管理后台 `SUPABASE_SERVICE_ROLE_KEY`
 
-**禁止手打 URL 里的 project ref**（易把 `q` 打成 `g`、`tmx` 打成 `mxx`）。前端构建后会校验 URL 与 anon JWT 内 `ref` 是否一致。
+**禁止手打 URL 里的 project ref**（易把 `q` 打成 `g`、`iqi` 打成 `igi`、`tmx` 打成 `kmx`/`mxx`）。前端会校验 URL 与 anon JWT 内 `ref` 是否一致；若两项**一起抄错但彼此一致**，校验不会报错，仍会连错项目 → **401**。部署后在浏览器 **Network** 里看 `*.supabase.co` 的域名，应与 Dashboard **Project URL** **逐字符相同**。对照示例见 **`docs/SUPABASE_REF_CHECK.md`**。
 
 ### 1.2 Edge Functions → Secrets（Dashboard 或 CLI）
 

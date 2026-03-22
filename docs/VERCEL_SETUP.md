@@ -25,7 +25,7 @@
 |--------|-----|
 | **Project Name** | 填 **`contractorgo-web`**（团队约定，避免与 `mobile` 子目录预览项目混淆） |
 | **Root Directory** | 留空**不要改**（用仓库根目录） |
-| **Framework Preset** | 选 **Other**（不要选 Next.js） |
+| **Framework Preset** | 选 **Other**（不要选 Next.js）。仓库根 `vercel.json` 已设 `"framework": null`，避免 monorepo 里带 `admin/`（Next）时被误判为 Next 导致 *No Next.js version detected*。 |
 | **Build Command** | 留空（用根目录 `vercel.json` 里的 `npm run build:web`） |
 | **Output Directory** | 留空（用根目录 `vercel.json` 里的 `mobile/dist`） |
 | **Install Command** | 留空（用 `npm install`） |
