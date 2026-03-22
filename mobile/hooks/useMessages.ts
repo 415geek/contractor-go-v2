@@ -1,7 +1,8 @@
 import { useEffect } from "react";
+import { useAuth } from "@clerk/clerk-expo";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { supabase } from "@/lib/supabase";
+import { createAuthenticatedClient, supabase } from "@/lib/supabase";
 
 export type Message = {
   id: string;
@@ -14,23 +15,25 @@ export type Message = {
   created_at: string;
 };
 
-async function fetchMessages(conversationId: string): Promise<Message[]> {
-  const { data, error } = await supabase
+async function fetchMessages(getToken: () => Promise<string | null>, conversationId: string): Promise<Message[]> {
+  const token = await getToken();
+  if (!token) throw new Error("Not authenticated");
+  const client = createAuthenticatedClient(token);
+  const { data, error } = await client
     .from("messages")
     .select("id, conversation_id, direction, message_type, original_content, translated_content, status, created_at")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
-
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return data ?? [];
 }
 
-async function sendMessage(conversationId: string, content: string): Promise<Message> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error("Not authenticated");
+async function sendMessage(getToken: () => Promise<string | null>, conversationId: string, content: string): Promise<Message> {
+  const token = await getToken();
+  if (!token) throw new Error("Not authenticated");
   const { data, error } = await supabase.functions.invoke<{ data: Message; error: string | null }>("send-message", {
     method: "POST",
-    headers: { Authorization: `Bearer ${session.access_token}` },
+    headers: { Authorization: `Bearer ${token}` },
     body: { conversation_id: conversationId, content, content_type: "text" },
   });
   if (error) throw error;
@@ -41,13 +44,15 @@ async function sendMessage(conversationId: string, content: string): Promise<Mes
 
 export function useMessages(conversationId: string | null) {
   const qc = useQueryClient();
+  const { getToken: _getToken, isLoaded, isSignedIn } = useAuth();
+  const getToken = () => _getToken();
   const query = useQuery({
     queryKey: ["messages", conversationId],
-    queryFn: () => fetchMessages(conversationId!),
-    enabled: !!conversationId,
+    queryFn: () => fetchMessages(getToken, conversationId!),
+    enabled: isLoaded && !!isSignedIn && !!conversationId,
   });
   const sendMutation = useMutation({
-    mutationFn: ({ convId, content }: { convId: string; content: string }) => sendMessage(convId, content),
+    mutationFn: ({ convId, content }: { convId: string; content: string }) => sendMessage(getToken, convId, content),
     onSuccess: (_, { convId }) => {
       qc.invalidateQueries({ queryKey: ["messages", convId] });
       qc.invalidateQueries({ queryKey: ["conversations"] });

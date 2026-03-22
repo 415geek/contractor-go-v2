@@ -14,6 +14,8 @@ import {
   Alert,
 } from "react-native";
 
+import { useAuth } from "@clerk/clerk-expo";
+
 import { useProjects } from "@/hooks/useProjects";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 import { supabase } from "@/lib/supabase";
@@ -37,6 +39,8 @@ type Mode = "manual" | "ai";
 
 export default function CreateProjectScreen() {
   const router = useRouter();
+  const { getToken: _getToken } = useAuth();
+  const getToken = () => _getToken();
   const { create, createLoading } = useProjects();
   const [mode, setMode] = useState<Mode>("manual");
   const [name, setName] = useState("");
@@ -68,14 +72,14 @@ export default function CreateProjectScreen() {
     setParseLoading(true);
     setParsed(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("未登录");
+      const token = await getToken();
+      if (!token) throw new Error("未登录");
       const { data, error } = await supabase.functions.invoke<{
         data?: { parsed: ParseResult };
         error?: string;
       }>("parse-project", {
         method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${token}` },
         body: { input: text, input_type: "text" },
       });
       if (error) throw error;
@@ -99,14 +103,14 @@ export default function CreateProjectScreen() {
       const base64 = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("未登录");
+      const token = await getToken();
+      if (!token) throw new Error("未登录");
       const { data, error } = await supabase.functions.invoke<{
         data?: { parsed: ParseResult };
         error?: string;
       }>("parse-project", {
         method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${token}` },
         body: {
           input_type: "voice",
           audio_base64: base64,
@@ -141,11 +145,11 @@ export default function CreateProjectScreen() {
       duration_days: days,
     });
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
+      const token = await getToken();
+      if (token) {
         await supabase.functions.invoke("generate-plan", {
           method: "POST",
-          headers: { Authorization: `Bearer ${session.access_token}` },
+          headers: { Authorization: `Bearer ${token}` },
           body: { project_id: project.id },
         });
       }

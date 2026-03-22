@@ -1,6 +1,7 @@
+import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { supabase } from "@/lib/supabase";
+import { createAuthenticatedClient } from "@/lib/supabase";
 
 export type Conversation = {
   id: string;
@@ -13,23 +14,30 @@ export type Conversation = {
   created_at: string;
 };
 
-async function fetchConversations(): Promise<Conversation[]> {
-  const { data, error } = await supabase
+async function fetchConversations(getToken: () => Promise<string | null>): Promise<Conversation[]> {
+  const token = await getToken();
+  if (!token) throw new Error("Not authenticated");
+  const client = createAuthenticatedClient(token);
+  const { data, error } = await client
     .from("conversations")
     .select("id, user_id, virtual_number_id, contact_phone, contact_name, contact_language, last_message_at, created_at")
     .order("last_message_at", { ascending: false, nullsFirst: false });
-
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return data ?? [];
 }
 
-async function createConversation(params: { contact_phone: string; contact_name?: string; virtual_number_id?: string }) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  const { data, error } = await supabase
+async function createConversation(
+  getToken: () => Promise<string | null>,
+  userId: string,
+  params: { contact_phone: string; contact_name?: string; virtual_number_id?: string },
+): Promise<Conversation> {
+  const token = await getToken();
+  if (!token) throw new Error("Not authenticated");
+  const client = createAuthenticatedClient(token);
+  const { data, error } = await client
     .from("conversations")
     .insert({
-      user_id: user.id,
+      user_id: userId,
       contact_phone: params.contact_phone,
       contact_name: params.contact_name ?? params.contact_phone,
       contact_language: "en-US",
@@ -37,18 +45,23 @@ async function createConversation(params: { contact_phone: string; contact_name?
     })
     .select()
     .single();
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   return data as Conversation;
 }
 
 export function useConversations() {
   const qc = useQueryClient();
+  const { getToken: _getToken, isLoaded, isSignedIn } = useAuth();
+  const getToken = () => _getToken();
+  const { user } = useUser();
   const query = useQuery({
     queryKey: ["conversations"],
-    queryFn: fetchConversations,
+    queryFn: () => fetchConversations(getToken),
+    enabled: isLoaded && !!isSignedIn,
   });
   const createMutation = useMutation({
-    mutationFn: createConversation,
+    mutationFn: (params: { contact_phone: string; contact_name?: string; virtual_number_id?: string }) =>
+      createConversation(getToken, user!.id, params),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["conversations"] }),
   });
   return {
