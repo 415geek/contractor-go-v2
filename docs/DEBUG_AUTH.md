@@ -2,6 +2,19 @@
 
 现象多为 **Supabase Edge** 里 `get-user` 无法从 Clerk Session 解析出用户，与「昨天能用、今天不行」常见原因如下。
 
+## 0. 优先核对：浏览器请求的 Supabase 域名是否打错（极常见）
+
+在 Network 里点开失败的 `get-conversations`，看完整 URL，例如：
+
+`https://<project_ref>.supabase.co/functions/v1/get-conversations`
+
+**`<project_ref>` 必须与** Supabase Dashboard → **Project Settings** → **API** 里 **Project URL** 完全一致（逐字符核对，易混：`q`/`g`、`tmx`/`mxx` 等）。
+
+若 URL 指向 **A 项目**，而 Vercel 里的 `EXPO_PUBLIC_SUPABASE_ANON_KEY` 却是 **B 项目** 的 key，或 URL 手误成不存在的 ref，会出现 **401 / Invalid or missing token**（Clerk 仍能返回 token，但 Edge 在错误项目上或未配好 Clerk Secret）。
+
+**修复**：在同一 API 页面复制 **Project URL** 与 **anon public** key，粘贴到 Vercel `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY`，保存后 **Redeploy**。  
+移动端构建会在启动时校验 URL 与 anon JWT 内的 `ref` 是否一致，不一致会直接抛错提示（见 `mobile/lib/api/supabase-edge.ts`）。
+
 ## 1. 先区分：401 来自网关还是 Edge？
 
 在浏览器 **Network** 里点开失败的 `.../functions/v1/get-conversations`（或 `me-profile`）：

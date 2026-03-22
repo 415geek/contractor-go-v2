@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 
+import { assertSupabaseUrlMatchesAnonKey } from "@/lib/api/supabase-edge";
 import type { Database } from "@/lib/types/database";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -17,6 +18,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
     ].join(" "),
   );
 }
+
+assertSupabaseUrlMatchesAnonKey(supabaseUrl, supabaseAnonKey);
 
 // 使用 Clerk 认证，不持久化 Supabase Auth session，避免旧 session 导致 "No suitable key"
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
