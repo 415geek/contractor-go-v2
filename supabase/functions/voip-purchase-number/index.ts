@@ -44,10 +44,12 @@ Deno.serve(async (req) => {
     const client = new VoipMsClient(getEnv("VOIPMS_USERNAME"), getEnv("VOIPMS_PASSWORD"));
     const monthlyStr = typeof body.monthly === "string" ? body.monthly.trim() : "";
     const setupStr = typeof body.setup === "string" ? body.setup.trim() : "";
+    const t0 = performance.now();
     await client.orderDID(did, {
       monthly: monthlyStr || undefined,
       setup: setupStr || undefined,
     });
+    console.log(`[voip-purchase-number] orderDID ok in ${Math.round(performance.now() - t0)}ms`);
 
     const admin = createAdminClient();
     const monthly = typeof body.monthly === "string" ? parseFloat(body.monthly) || 0 : 0;

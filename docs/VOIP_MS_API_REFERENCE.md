@@ -154,6 +154,19 @@ POST/GET .../rest.php?api_username=xxx&api_password=xxx&method=sendSMS&did=14155
 |--------|------|
 | VOIPMS_USERNAME | Voip.ms 账号邮箱 |
 | VOIPMS_PASSWORD | Voip.ms API 密码 |
+| VOIP_RELAY_URL | 可选，固定 IP 中继前缀 |
+| VOIP_RELAY_SECRET | 可选，中继鉴权 |
+| VOIP_HTTP_TIMEOUT_MS | 可选，HTTP 超时（默认 120000） |
+
+---
+
+## 5.1 性能与调用策略（集成建议）
+
+官方文档未给出固定 **QPS/并发** 上限；生产侧建议：
+
+1. **勿对同一州重复调用 `getRateCentersUSA`**：结果可按州缓存或单次拉取后在服务端遍历 `ratecenter`。
+2. **`getDIDsUSA` 需 `state` + `ratecenter`**：按区号筛选时，应对 `getDIDsUSA` 返回的 `did` 做 NPA 过滤，而不是为每个区号重复拉全州 rate center 列表。
+3. **湾区多 NPA**：若多个区号同属一州（如加州湾区），应 **一次 `getRateCentersUSA` + 分批 `getDIDsUSA` + NPA 过滤**，见 `docs/VOIP_DEPLOYMENT.md`。
 
 ---
 

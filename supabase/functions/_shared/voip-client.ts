@@ -98,7 +98,16 @@ export class VoipMsClient {
     const base = voipRequestBase();
     const url = `${base}?${search.toString()}`;
     console.log(`[VoipMs] ${method} request${base !== VOIP_DIRECT_BASE ? " (via relay)" : ""}`);
-    const res = await fetch(url, { headers: voipRelayHeaders() });
+    /** Voip.ms 偶发慢响应；超时避免 Edge 长时间挂起（官方无固定 SLA，默认 120s） */
+    const timeoutMs = Math.max(15_000, Math.min(Number(Deno.env.get("VOIP_HTTP_TIMEOUT_MS") ?? "120000"), 180_000));
+    const ac = new AbortController();
+    const tid = setTimeout(() => ac.abort(), timeoutMs);
+    let res: Response;
+    try {
+      res = await fetch(url, { headers: voipRelayHeaders(), signal: ac.signal });
+    } finally {
+      clearTimeout(tid);
+    }
     const text = await res.text();
     const trimmed = text.trim();
     if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
