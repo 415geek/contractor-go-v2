@@ -37,6 +37,8 @@ export default function SSOCallbackPage() {
       try {
         await handleRedirectCallback({});
         setDebugInfo("handleRedirectCallback succeeded");
+        // 让 Clerk 在下一帧更新 session，再进 /home，避免与 RootNavigator 守卫竞态
+        await new Promise<void>((r) => setTimeout(r, 50));
         replaceSignedInHome();
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);

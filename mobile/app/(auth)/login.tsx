@@ -179,11 +179,14 @@ export default function LoginScreen() {
           // Web: full-page redirect flow avoids popup/COOP/Turnstile issues entirely.
           // Clerk will redirect back to /sso-callback which completes the session.
           const strategy = `oauth_${provider}` as `oauth_${typeof provider}`;
+          const cb = `${window.location.origin}/sso-callback`;
           await signIn!.authenticateWithRedirect({
             strategy,
-            redirectUrl: `${window.location.origin}/sso-callback`,
-            // 登录完成后直达工作台；需在 Clerk Dashboard → Redirect URLs 允许 `https://你的域名/home`
-            redirectUrlComplete: `${window.location.origin}/home`,
+            // OAuth 回到 /sso-callback；完成会话后再由 sso-callback 页进入 /home。
+            // 若 redirectUrlComplete 设为 /home，Clerk 可能在客户端 isSignedIn 仍为 false 时先跳到 /home，
+            // 会触发全局路由守卫里的误判（约 1～2 秒内被踢回落地页/登录）。
+            redirectUrl: cb,
+            redirectUrlComplete: cb,
           });
           // Full page navigates away — no further code executes here.
           return;
