@@ -1,7 +1,7 @@
 /**
  * 旧金山湾区及邻近可购号码区号（Voip.ms / 美国本土 NPA）
  * 进入购号页时由 Edge `voip-available-numbers?bay_area=1` 拉取库存，再在客户端按区域与数字筛选。
- * 与 `supabase/functions/voip-available-numbers/index.ts` 内 `BAY_AREA_NPAS` 须保持一致。
+ * 与 `supabase/functions/voip-available-numbers/index.ts` 内湾区 NPA 列表须保持一致（后端为 Telnyx）。
  */
 export const BAY_AREA_NPAS_ORDERED = [
   "415",

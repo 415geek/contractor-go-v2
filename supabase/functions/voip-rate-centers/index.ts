@@ -1,11 +1,43 @@
 import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
-import { VoipMsClient } from "../_shared/voip-client.ts";
 
-function getEnv(name: string): string {
-  const v = Deno.env.get(name);
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
-}
+/**
+ * Telnyx 无「列出某州全部 rate center」的独立接口；此处返回美国常见 rate center 名称
+ * （与 Telnyx 控制台 / available_phone_numbers 中 region 展示一致，多为大写+空格）。
+ * 购号页优先使用 area_code / bay_area；本接口供高级筛选。
+ */
+const US_STATE_RATE_CENTERS: Record<string, string[]> = {
+  CA: [
+    "SAN FRANCISCO",
+    "SAN JOSE",
+    "OAKLAND",
+    "BERKELEY",
+    "SAN MATEO",
+    "PALO ALTO",
+    "REDWOOD CITY",
+    "SUNNYVALE",
+    "SANTA CLARA",
+    "FREMONT",
+    "HAYWARD",
+    "CONCORD",
+    "WALNUT CREEK",
+    "ANTIOCH",
+    "LOS ANGELES",
+    "SAN DIEGO",
+    "SACRAMENTO",
+    "NAPA",
+    "SANTA ROSA",
+    "SANTA CRUZ",
+    "MONTEREY",
+    "SALINAS",
+  ],
+  NY: ["NEW YORK", "BROOKLYN", "BUFFALO", "ROCHESTER", "ALBANY"],
+  TX: ["HOUSTON", "DALLAS", "AUSTIN", "SAN ANTONIO"],
+  FL: ["MIAMI", "TAMPA", "ORLANDO", "JACKSONVILLE"],
+  IL: ["CHICAGO"],
+  NV: ["LAS VEGAS", "RENO"],
+  GA: ["ATLANTA"],
+  WA: ["SEATTLE", "SPOKANE"],
+};
 
 Deno.serve(async (req) => {
   const opts = handleOptionsRequest(req);
@@ -25,16 +57,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    const client = new VoipMsClient(getEnv("VOIPMS_USERNAME"), getEnv("VOIPMS_PASSWORD"));
-    const resp = await client.getRateCentersUSA(state.toUpperCase());
-    const ratecenters = (resp as { ratecenters?: Array<{ ratecenter: string }> }).ratecenters ?? [];
-    const list = ratecenters.map((r) => r.ratecenter);
+    const st = state.toUpperCase();
+    const list = US_STATE_RATE_CENTERS[st] ?? [];
 
     return jsonResponse({ data: list, error: null, message: "ok" });
   } catch (e) {
     console.error("[voip-rate-centers]", e);
     return jsonResponse(
-      { data: null, error: "voip_error", message: e instanceof Error ? e.message : "Voip.ms request failed" },
+      { data: null, error: "internal_error", message: e instanceof Error ? e.message : "Failed" },
       500,
     );
   }

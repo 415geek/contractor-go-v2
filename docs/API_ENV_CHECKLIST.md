@@ -13,8 +13,9 @@
 | `SUPABASE_SERVICE_ROLE_KEY` | 自动注入 | ✓ |
 | `OPENAI_API_KEY` | Chat Completions（项目解析、生成计划、翻译、材料/房屋视觉、Permit 解析）+ Whisper（项目语音） | ✓（AI/语音相关功能） |
 | `OPENAI_CHAT_MODEL` | 覆盖默认聊天模型（默认 `gpt-4o-mini`）；也可设 `OPENAI_MODEL` | 可选 |
-| `VOIPMS_USERNAME` | Voip.ms 搜索/购买号码、发短信 | ✓（若用虚拟号码） |
-| `VOIPMS_PASSWORD` | Voip.ms API 密码 | ✓（若用虚拟号码） |
+| `TELNYX_API_KEY` | Telnyx 搜索/购买号码、发短信 | ✓（若用虚拟号码） |
+| `TELNYX_MESSAGING_PROFILE_ID` | 订购时绑定 Messaging Profile（推荐） | 可选 |
+| `TELNYX_CONNECTION_ID` | 订购时绑定语音 Connection | 可选 |
 | `SOCRATA_APP_TOKEN` | Permit 查询走 SF DataSF（Socrata）时可选，提高 API 限额 | 可选 |
 
 ## 用户端 Web（Vercel 环境变量）
@@ -42,10 +43,10 @@
 | 功能 | Edge Function | 依赖 |
 |------|---------------|------|
 | 消息/对话列表 | get-conversations, get-messages, create-conversation | - |
-| 发消息 | send-message | VOIPMS_*, translate |
+| 发消息 | send-message | TELNYX_API_KEY, translate |
 | 虚拟号码列表 | voip-my-numbers | - |
-| 搜索号码 | voip-available-numbers | VOIPMS_*；支持 `state`（整州）、`area_code`（任意美国 NPA）、`state`+`ratecenter` |
-| 购买号码 | voip-purchase-number | VOIPMS_* |
+| 搜索号码 | voip-available-numbers | TELNYX_API_KEY；`bay_area` / `state` / `area_code` / `state`+`ratecenter` |
+| 购买号码 | voip-purchase-number | TELNYX_API_KEY；可选 TELNYX_MESSAGING_PROFILE_ID |
 | 项目 CRUD | projects | - |
 | 项目解析（语音/文字） | parse-project | `OPENAI_API_KEY`（文字/结构化用 Chat；语音另需 Whisper 同 key） |
 | 生成计划 | generate-plan | `OPENAI_API_KEY` |

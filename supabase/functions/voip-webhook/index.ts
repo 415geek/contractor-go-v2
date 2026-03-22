@@ -12,18 +12,47 @@ function normalizePhone(p: string): string {
   return d.length === 10 ? `+1${d}` : d.startsWith("1") && d.length === 11 ? `+${d}` : p.startsWith("+") ? p : `+${p}`;
 }
 
-async function parseWebhookBody(req: Request): Promise<{ from: string; to: string; message: string } | null> {
+/** Telnyx `message.received` 与旧版简单 JSON 兼容 */
+async function parseInbound(req: Request): Promise<{ from: string; to: string; message: string } | null> {
   const ct = req.headers.get("content-type") ?? "";
-  if (ct.includes("application/json")) {
-    const j = await req.json() as { from?: string; to?: string; message?: string };
-    return j.from && j.to && j.message ? { from: j.from, to: j.to, message: j.message } : null;
+  if (!ct.includes("application/json")) {
+    const text = await req.text();
+    const params = new URLSearchParams(text);
+    const from = params.get("from");
+    const to = params.get("to");
+    const message = params.get("message");
+    return from && to && message ? { from, to, message } : null;
   }
-  const text = await req.text();
-  const params = new URLSearchParams(text);
-  const from = params.get("from");
-  const to = params.get("to");
-  const message = params.get("message");
-  return from && to && message ? { from, to, message } : null;
+
+  const raw = await req.json() as Record<string, unknown>;
+
+  const data = raw?.data as
+    | {
+        event_type?: string;
+        payload?: {
+          from?: { phone_number?: string };
+          to?: Array<{ phone_number?: string }>;
+          text?: string;
+        };
+      }
+    | undefined;
+
+  if (data?.event_type === "message.received" && data.payload) {
+    const pl = data.payload;
+    const from = pl.from?.phone_number;
+    const to = pl.to?.[0]?.phone_number;
+    const message = typeof pl.text === "string" ? pl.text : "";
+    if (from && to && message) {
+      return { from, to, message };
+    }
+  }
+
+  const legacy = raw as { from?: string; to?: string; message?: string };
+  if (legacy.from && legacy.to && legacy.message) {
+    return { from: legacy.from, to: legacy.to, message: legacy.message };
+  }
+
+  return null;
 }
 
 Deno.serve(async (req) => {
@@ -35,9 +64,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await parseWebhookBody(req);
+    const body = await parseInbound(req);
     if (!body) {
-      return jsonResponse({ data: null, error: "invalid_body", message: "from, to, message required" }, 400);
+      return jsonResponse({ data: null, error: "invalid_body", message: "Unrecognized webhook payload" }, 400);
     }
 
     const toNormalized = normalizePhone(body.to);

@@ -1,5 +1,5 @@
 import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
-import { VoipMsClient } from "../_shared/voip-client.ts";
+import { telnyxSendSms } from "../_shared/telnyx-client.ts";
 import { getUserFromRequest } from "../_shared/get-user.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
 
@@ -82,8 +82,11 @@ Deno.serve(async (req) => {
     const translateJson = await translateRes.json();
     const translated = translateJson?.data?.translated_text ?? content;
 
-    const voip = new VoipMsClient(getEnv("VOIPMS_USERNAME"), getEnv("VOIPMS_PASSWORD"));
-    await voip.sendSMS(fromDid, normalizePhone(contactPhone), translated);
+    await telnyxSendSms(getEnv("TELNYX_API_KEY"), {
+      from: fromDid,
+      to: normalizePhone(contactPhone),
+      text: translated,
+    });
 
     const { data: msg, error: msgErr } = await admin
       .from("messages")

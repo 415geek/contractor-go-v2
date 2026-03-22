@@ -1,4 +1,6 @@
-# Voip.ms 集成：配置与部署
+# Voip.ms 集成（已弃用）
+
+> **当前生产虚拟号码已迁移至 Telnyx**，请改用 **`docs/TELNYX_SETUP.md`**。下文仅作历史参考。
 
 依据 [Voip.ms REST API](https://voip.ms/resources/api)（账户内 **Main Menu → SOAP and REST/JSON API** 与 `docs/VOIP_MS_API_REFERENCE.md`）与本仓库实现整理。
 
@@ -72,7 +74,7 @@ curl -sS "<SUPABASE_URL>/functions/v1/voip-available-numbers?bay_area=1" \
 
 | 文件 | 作用 |
 |------|------|
-| `supabase/functions/_shared/voip-client.ts` | REST 调用、中继、超时 |
+| `supabase/functions/_shared/telnyx-client.ts` | Telnyx REST v2 |
 | `supabase/functions/voip-available-numbers/index.ts` | 库存搜索（含湾区聚合） |
 | `supabase/functions/voip-purchase-number/index.ts` | `orderDID` + 写库 |
 | `scripts/voip-relay-server.mjs` | 固定 IP 透明中继 |

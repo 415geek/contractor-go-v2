@@ -1,5 +1,9 @@
 import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
-import { VoipMsClient } from "../_shared/voip-client.ts";
+import {
+  normalizeToE164US,
+  telnyxCreateNumberOrder,
+  telnyxWaitNumberOrderSuccess,
+} from "../_shared/telnyx-client.ts";
 import { getUserFromRequest } from "../_shared/get-user.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
 
@@ -41,26 +45,38 @@ Deno.serve(async (req) => {
     }
 
     const phoneNumber = normalizeDid(did);
-    const client = new VoipMsClient(getEnv("VOIPMS_USERNAME"), getEnv("VOIPMS_PASSWORD"));
-    const monthlyStr = typeof body.monthly === "string" ? body.monthly.trim() : "";
-    const setupStr = typeof body.setup === "string" ? body.setup.trim() : "";
+    const e164 = normalizeToE164US(did);
+    const apiKey = getEnv("TELNYX_API_KEY");
+    const messagingProfileId = Deno.env.get("TELNYX_MESSAGING_PROFILE_ID")?.trim();
+    const connectionId = Deno.env.get("TELNYX_CONNECTION_ID")?.trim();
+
     const t0 = performance.now();
-    await client.orderDID(did, {
-      monthly: monthlyStr || undefined,
-      setup: setupStr || undefined,
+    const order = await telnyxCreateNumberOrder(apiKey, e164, {
+      messaging_profile_id: messagingProfileId || undefined,
+      connection_id: connectionId || undefined,
     });
-    console.log(`[voip-purchase-number] orderDID ok in ${Math.round(performance.now() - t0)}ms`);
+    const orderId = order.id;
+    if (!orderId) {
+      throw new Error("Telnyx 未返回 number_order id");
+    }
+    await telnyxWaitNumberOrderSuccess(apiKey, orderId);
+    console.log(`[voip-purchase-number] Telnyx order ${orderId} ok in ${Math.round(performance.now() - t0)}ms`);
+
+    const monthlyStr = typeof body.monthly === "string" ? body.monthly.trim() : "";
+    const monthly = monthlyStr ? parseFloat(monthlyStr) || 0 : 0;
 
     const admin = createAdminClient();
-    const monthly = typeof body.monthly === "string" ? parseFloat(body.monthly) || 0 : 0;
     const { data: row, error } = await admin
       .from("virtual_numbers")
       .insert({
         user_id: user.id,
         phone_number: phoneNumber,
-        provider: "voipms",
+        provider: "telnyx",
         status: "active",
-        metadata: { monthly_cost: monthly },
+        metadata: {
+          monthly_cost: monthly,
+          telnyx_number_order_id: orderId,
+        },
       })
       .select()
       .single();
@@ -81,7 +97,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("[voip-purchase-number]", e);
     return jsonResponse(
-      { data: null, error: "voip_error", message: e instanceof Error ? e.message : "Purchase failed" },
+      { data: null, error: "telnyx_error", message: e instanceof Error ? e.message : "Purchase failed" },
       500,
     );
   }

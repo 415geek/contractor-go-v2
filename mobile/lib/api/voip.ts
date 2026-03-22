@@ -9,8 +9,7 @@ export type AvailableDidRow = {
 };
 
 /**
- * 湾区号码：一次请求由 Edge 并行拉取多区号（见 voip-available-numbers?bay_area=1），
- * 避免客户端连打 10 次、总耗时可下降一个数量级。
+ * 湾区号码：一次请求由 Edge 并行拉取多区号（Telnyx `available_phone_numbers`，见 `bay_area=1`）。
  */
 export async function fetchBayAreaAvailableNumbers(): Promise<AvailableDidRow[]> {
   return fetchAvailableNumbers({ bay_area: "1" });

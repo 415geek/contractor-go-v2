@@ -29,7 +29,9 @@ Voip.ms API 要求调用方 IP 必须在账户白名单中。Supabase Edge Funct
    - `VOIP_RELAY_URL` = 中继完整前缀，例如 `https://api.example.com/voip`（不要末尾 `/`，**不要**写成 `…com./voip` 或 `…io./voip`——多点会导致 Edge 上 DNS 失败）
    - **重要**：`VOIP_RELAY_URL` 里的主机名必须在**公网 DNS** 可解析（如 `dig api.example.com @8.8.8.8` 能查到 A/AAAA）。仅在本机 `hosts` 或内网 DNS 有记录时，Supabase Edge 会报 `dns error: Name or service not known`。
    - `VOIP_RELAY_SECRET` = 与 VPS 上 `RELAY_SECRET` 相同（若中继启用了校验）
-3. 重新部署 Edge Functions。之后 `voip-client` 会经中继访问 Voip.ms，Voip 看到的来源 IP 为你的 VPS。
+3. 重新部署 Edge Functions。之后旧版 `voip-client` 会经中继访问 Voip.ms，Voip 看到的来源 IP 为你的 VPS。
+
+> **说明**：当前仓库已默认使用 **Telnyx**（API Key 认证，一般**不需要**固定 IP 中继），见 `docs/TELNYX_SETUP.md`。
 
 本地开发可在 `supabase/.env` 中配置同上变量（`supabase functions serve` 会读取）。
 
