@@ -10,7 +10,8 @@
    `https://<PROJECT_REF>.supabase.co/functions/v1/voip-webhook`  
    事件需包含 **`message.received`**（Inbound）。
 3. 在 Profile 中关联 **10DLC Campaign**（美国本地号发短信通常需要，见 [10DLC 快速开始](https://developers.telnyx.com/docs/messaging/10dlc/quickstart/index)）。
-4. 购号时可选：将 **Messaging Profile ID** 写入 Supabase Secret `TELNYX_MESSAGING_PROFILE_ID`，新号码会自动绑定该 Profile。
+4. 购号时可选：将 **Messaging Profile ID**（控制台里该 Profile 的 **UUID**，形如 `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`）写入 Supabase Secret `TELNYX_MESSAGING_PROFILE_ID`，新号码会自动绑定该 Profile。  
+   **不要**把 `TELNYX_API_KEY`（以 `KEY` 开头）填进此项，否则会报 `Invalid Messaging Profile ID`。
 
 ## 2. Supabase Secrets
 

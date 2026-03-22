@@ -1,7 +1,7 @@
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { supabase } from "@/lib/supabase";
+import { invokeEdgeWithClerk } from "@/lib/api/edge-functions";
 
 export type Conversation = {
   id: string;
@@ -17,12 +17,7 @@ export type Conversation = {
 async function fetchConversations(getToken: () => Promise<string | null>): Promise<Conversation[]> {
   const token = await getToken();
   if (!token) throw new Error("Not authenticated");
-  const { data, error } = await supabase.functions.invoke<{ data: Conversation[]; error: string | null }>("get-conversations", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (error) throw error;
-  if (data?.error) throw new Error(data.error as string);
-  return data?.data ?? [];
+  return invokeEdgeWithClerk<Conversation[]>("get-conversations", token, { method: "GET" });
 }
 
 async function createConversation(
@@ -32,26 +27,21 @@ async function createConversation(
 ): Promise<Conversation> {
   const token = await getToken();
   if (!token) throw new Error("Not authenticated");
-  const { data, error } = await supabase.functions.invoke<{ data: Conversation; error: string | null }>("create-conversation", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: params,
-  });
-  if (error) throw error;
-  if (data?.error) throw new Error(data.error as string);
-  if (!data?.data) throw new Error("No data returned");
-  return data.data;
+  const data = await invokeEdgeWithClerk<Conversation>("create-conversation", token, { method: "POST", body: params });
+  if (!data) throw new Error("未返回对话数据");
+  return data;
 }
 
 export function useConversations() {
   const qc = useQueryClient();
-  const { getToken: _getToken, isLoaded, isSignedIn } = useAuth();
+  const { getToken: _getToken, isLoaded, isSignedIn, sessionId } = useAuth();
   const getToken = () => _getToken();
   const { user } = useUser();
   const query = useQuery({
     queryKey: ["conversations"],
     queryFn: () => fetchConversations(getToken),
-    enabled: isLoaded && !!isSignedIn,
+    // 等 Clerk session 就绪再请求，避免 Web 上 isSignedIn 为真但 getToken 尚未可用
+    enabled: isLoaded && !!isSignedIn && !!sessionId,
   });
   const createMutation = useMutation({
     mutationFn: (params: { contact_phone: string; contact_name?: string; virtual_number_id?: string }) =>

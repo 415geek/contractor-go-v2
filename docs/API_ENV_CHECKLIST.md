@@ -20,6 +20,9 @@
 | `TELNYX_MESSAGING_PROFILE_ID` | 订购时绑定 Messaging Profile（推荐） | 可选 |
 | `TELNYX_CONNECTION_ID` | 订购时绑定语音 Connection | 可选 |
 | `SOCRATA_APP_TOKEN` | Permit 查询走 SF DataSF（Socrata）时可选，提高 API 限额 | 可选 |
+| `CLERK_SECRET_KEY` | Edge `get-user` 内 `verifyToken`（兼容 Clerk JWE Session；会拉 JWKS） | 生产 Session 为 JWE 时**二选一** |
+| `CLERK_JWT_KEY` | Clerk Dashboard → API Keys → **JWT verification key**（PEM）；`verifyToken({ jwtKey })`，Edge 上**无网络**拉 JWKS | 与上一行**二选一**（推荐冷启动更快的 Edge） |
+| `CLERK_AUTHORIZED_PARTIES` | 逗号分隔的前端来源，如 `https://www.contractorgo.io,https://contractorgo.io`；传给 `verifyToken` 的 `authorizedParties` | 若校验 session 报 azp/来源相关错误时再配 |
 
 ## 用户端 Web（Vercel 环境变量）
 
@@ -59,9 +62,19 @@
 | Permit 查询 | search-permit | `OPENAI_API_KEY`；可选 `SOCRATA_APP_TOKEN`（SF DataSF 限额） |
 | 翻译 | translate | `OPENAI_API_KEY` |
 
+## Clerk + Edge Functions（重要）
+
+用户端请求 Edge 时：
+
+- **`apikey`**：anon key（必填）；
+- **`Authorization: Bearer <Clerk Session JWT>`**：与 `config.toml` 里各函数的 **`verify_jwt = false`** 配合，网关将 JWT 原样传到 Edge；
+- **`X-Clerk-Authorization`**：与上面相同 Clerk JWT 的备份头；`get-user.ts` 优先读此头，避免个别代理行为差异。
+
+在 Supabase Secrets 至少配置 **`CLERK_SECRET_KEY`** 或 **`CLERK_JWT_KEY`**（二选一），Edge 内使用 `@clerk/backend` 的 `verifyToken` 解析 Session（**生产常见为 JWE，无法仅靠手动 Base64 解码**）。未配置时仅能对 **3 段 JWT** 做无签名校验式解析，易导致 401。
+
 ## 存储上传说明
 
 材料比价、房屋估价的图片经 Edge Function **`upload-tool-image`** 使用 **Service Role** 写入 Storage（客户端带 **Clerk JWT + apikey**），避免「仅用 anon + Clerk」时 Storage RLS 拒绝上传。
 
-- 需在 Supabase 创建 **`material-images`** bucket；建议 **Public bucket**（或至少对匿名读开放），以便 AI 视觉接口通过公网 URL 拉取图片。
+- 必须在 Supabase 存在 **`material-images`** bucket（**Public**，便于 AI 用公网 URL 拉图）。仓库已提供迁移 `supabase/migrations/202603210001_storage_material_images_bucket.sql`；新环境执行 `supabase db push` 即可创建。若报错 **Bucket not found**，在 Dashboard → **SQL Editor** 执行该文件中的 `INSERT INTO storage.buckets ...` 亦可。
 - 部署：`supabase functions deploy upload-tool-image`

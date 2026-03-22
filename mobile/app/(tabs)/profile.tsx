@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-expo";
 import { pushPath } from "@/lib/web-navigation";
+import { useMeProfile } from "@/hooks/useMeProfile";
 
 type SettingRow = {
   icon: string;
@@ -57,6 +58,7 @@ function SettingItem({ row }: { row: SettingRow }) {
 export default function ProfileScreen() {
   const { signOut } = useClerkAuth();
   const { user } = useUser();
+  const { data: meProfile } = useMeProfile();
 
   const phone =
     user?.phoneNumbers[0]?.phoneNumber ??
@@ -73,6 +75,14 @@ export default function ProfileScreen() {
     {
       title: "账户",
       rows: [
+        {
+          icon: "card-outline",
+          iconColor: "#F97316",
+          iconBg: "bg-accent-500/15",
+          label: "订阅与用量",
+          value: meProfile?.is_pro ? "Pro" : "免费",
+          onPress: () => pushPath("/subscription"),
+        },
         {
           icon: "call-outline",
           iconColor: "#2563EB",
@@ -194,18 +204,27 @@ export default function ProfileScreen() {
 
         {/* 订阅状态卡片 */}
         <Pressable
+          onPress={() => pushPath("/subscription")}
           className="mx-4 mb-4 rounded-2xl border border-accent-500/35 bg-accent-500/10 p-4 flex-row items-center gap-3 active:bg-accent-500/15"
         >
           <View className="w-10 h-10 rounded-xl bg-accent-500/20 items-center justify-center">
             <Ionicons name="star" size={20} color="#F97316" />
           </View>
           <View className="flex-1">
-            <Text className="text-ink font-semibold">免费版</Text>
-            <Text className="text-ink-secondary text-sm mt-0.5">升级 Pro，解锁全部功能</Text>
+            <Text className="text-ink font-semibold">
+              {meProfile?.is_pro ? "Pro 订阅" : "免费版"}
+            </Text>
+            <Text className="text-ink-secondary text-sm mt-0.5">
+              {meProfile?.is_pro
+                ? "虚拟号短信无限制 · 查看用量"
+                : "50 条短信 + 约 10 分钟通话体验 · 升级 Pro 解锁"}
+            </Text>
           </View>
-          <View className="bg-accent-500 rounded-lg px-3 py-1.5">
-            <Text className="text-white text-xs font-bold">升级</Text>
-          </View>
+          {!meProfile?.is_pro && (
+            <View className="bg-accent-500 rounded-lg px-3 py-1.5">
+              <Text className="text-white text-xs font-bold">升级</Text>
+            </View>
+          )}
         </Pressable>
 
         {/* 设置列表 */}

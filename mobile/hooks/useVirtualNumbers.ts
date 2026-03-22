@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/clerk-expo";
 
 import { fetchAvailableNumbers, purchaseVoipNumber } from "@/lib/api/voip";
-import { supabase } from "@/lib/supabase";
+import { invokeEdgeWithClerk } from "@/lib/api/edge-functions";
+import { ME_PROFILE_QUERY_KEY } from "@/hooks/useMeProfile";
 
 export type VirtualNumber = {
   id: string;
@@ -25,12 +26,7 @@ export type AvailableDid = {
 async function fetchMyNumbers(getToken: () => Promise<string | null>): Promise<VirtualNumber[]> {
   const token = await getToken();
   if (!token) throw new Error("Not authenticated");
-  const { data, error } = await supabase.functions.invoke<{ data: VirtualNumber[]; error: string | null }>("voip-my-numbers", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (error) throw error;
-  if (data?.error) throw new Error(data.error as string);
-  return data?.data ?? [];
+  return invokeEdgeWithClerk<VirtualNumber[]>("voip-my-numbers", token, { method: "GET" });
 }
 
 async function searchAvailableNumbers(params: { area_code?: string; state?: string; ratecenter?: string }): Promise<AvailableDid[]> {
@@ -63,7 +59,10 @@ export function useVirtualNumbers() {
   const purchaseMutation = useMutation({
     mutationFn: ({ did, monthly, setup }: { did: string; monthly?: string; setup?: string }) =>
       purchaseNumber(getToken, did, monthly, setup),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["virtualNumbers"] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["virtualNumbers"] });
+      void qc.invalidateQueries({ queryKey: ME_PROFILE_QUERY_KEY });
+    },
   });
   return {
     numbers: query.data ?? [],

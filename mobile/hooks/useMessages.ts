@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useAuth } from "@clerk/clerk-expo";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { supabase } from "@/lib/supabase";
+import { invokeEdgeWithClerk } from "@/lib/api/edge-functions";
 
 export type Message = {
   id: string;
@@ -18,28 +18,21 @@ export type Message = {
 async function fetchMessages(getToken: () => Promise<string | null>, conversationId: string): Promise<Message[]> {
   const token = await getToken();
   if (!token) throw new Error("Not authenticated");
-  const { data, error } = await supabase.functions.invoke<{ data: Message[]; error: string | null }>("get-messages", {
+  return invokeEdgeWithClerk<Message[]>("get-messages", token, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
     body: { conversation_id: conversationId },
   });
-  if (error) throw error;
-  if (data?.error) throw new Error(data.error as string);
-  return data?.data ?? [];
 }
 
 async function sendMessage(getToken: () => Promise<string | null>, conversationId: string, content: string): Promise<Message> {
   const token = await getToken();
   if (!token) throw new Error("Not authenticated");
-  const { data, error } = await supabase.functions.invoke<{ data: Message; error: string | null }>("send-message", {
+  const data = await invokeEdgeWithClerk<Message>("send-message", token, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
     body: { conversation_id: conversationId, content, content_type: "text" },
   });
-  if (error) throw error;
-  if (data?.error) throw new Error(data.error as string);
-  if (!data?.data) throw new Error("No data");
-  return data.data;
+  if (!data) throw new Error("未返回消息数据");
+  return data;
 }
 
 export function useMessages(conversationId: string | null) {

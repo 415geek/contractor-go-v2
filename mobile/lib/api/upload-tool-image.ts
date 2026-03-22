@@ -1,4 +1,4 @@
-import { edgeFunctionUrl, requireSupabasePublicEnv } from "@/lib/api/supabase-edge";
+import { edgeFunctionClerkHeaders, edgeFunctionUrl, requireSupabasePublicEnv } from "@/lib/api/supabase-edge";
 
 export type UploadToolImageKind = "material" | "estimate";
 
@@ -15,8 +15,7 @@ export async function uploadToolImageViaEdge(
   const res = await fetch(edgeFunctionUrl(url, "upload-tool-image"), {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${clerkJwt}`,
-      apikey: anonKey,
+      ...edgeFunctionClerkHeaders(anonKey, clerkJwt),
       "Content-Type": "application/json",
     },
     body: JSON.stringify({

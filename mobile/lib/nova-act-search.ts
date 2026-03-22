@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { edgeFunctionClerkHeaders, edgeFunctionUrl, requireSupabasePublicEnv } from "@/lib/api/supabase-edge";
 
 export type MaterialSearchHit = {
   product_name: string;
@@ -28,16 +28,25 @@ export async function searchMaterialPrices(
 ): Promise<MaterialSearchResponse> {
   const token = await getToken();
   if (!token) throw new Error("Not authenticated");
-  const { data, error } = await supabase.functions.invoke<{
-    data?: MaterialSearchResponse;
-    error?: string;
-  }>("search-material", {
+  const { url, anonKey } = requireSupabasePublicEnv();
+  const res = await fetch(edgeFunctionUrl(url, "search-material"), {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: payload,
+    headers: {
+      ...edgeFunctionClerkHeaders(anonKey, token),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
   });
-  if (error) throw error;
-  if (data?.error) throw new Error(String(data.error));
-  if (!data?.data) throw new Error("No data returned");
-  return data.data;
+  const text = await res.text();
+  let json: { data?: MaterialSearchResponse; error?: string | null; message?: string };
+  try {
+    json = JSON.parse(text) as typeof json;
+  } catch {
+    throw new Error(res.ok ? "材料搜索返回非 JSON" : `材料搜索失败 (HTTP ${res.status})`);
+  }
+  if (!res.ok || json.error) {
+    throw new Error((json.message ?? json.error ?? "").trim() || `材料搜索失败 (HTTP ${res.status})`);
+  }
+  if (!json.data) throw new Error(json.message ?? "未返回数据");
+  return json.data;
 }

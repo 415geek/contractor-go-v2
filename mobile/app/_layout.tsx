@@ -14,6 +14,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { WebResponsiveWrapper } from "@/components/WebResponsiveWrapper";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { theme } from "@/lib/theme";
+import { isPlaceholderClerkPublishableKey } from "@/lib/clerk-publishable-key";
 
 WebBrowser.maybeCompleteAuthSession({ skipRedirectCheck: true });
 
@@ -76,6 +77,18 @@ export default function RootLayout() {
     return (
       <View style={{ flex: 1, backgroundColor: theme.bg, padding: 24, justifyContent: "center" }}>
         <Text style={{ color: theme.danger, fontSize: 16 }}>缺少 EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY，请在 .env 中配置</Text>
+      </View>
+    );
+  }
+  if (isPlaceholderClerkPublishableKey(clerkKey)) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.bg, padding: 24, justifyContent: "center" }}>
+        <Text style={{ color: theme.danger, fontSize: 18, fontWeight: "600", marginBottom: 12 }}>Clerk 公钥无效（占位符）</Text>
+        <Text style={{ color: theme.inkSecondary, fontSize: 14, lineHeight: 22 }}>
+          当前值为文档占位符（如 pk_test_xxxxxxxx…）。请在 Vercel → 对应项目 → Settings → Environment Variables 中，将
+          EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY 替换为 Clerk Dashboard → API Keys 里的真实 Publishable key（生产用 pk_live_），保存后
+          Redeploy。若从仓库根目录部署 www.contractorgo.io，请配置在 contractorgo-web 项目，而非仅本地 mobile 子目录预览项目。
+        </Text>
       </View>
     );
   }

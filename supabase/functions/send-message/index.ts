@@ -2,6 +2,8 @@ import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
 import { telnyxSendSms } from "../_shared/telnyx-client.ts";
 import { getUserFromRequest } from "../_shared/get-user.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
+import { FREE_TIER_SMS_OUTBOUND_LIMIT, isProSubscriber } from "../_shared/voip-entitlements.ts";
+import { countOutboundSmsForVirtualNumber } from "../_shared/voip-sms-quota.ts";
 
 function getEnv(name: string): string {
   const v = Deno.env.get(name);
@@ -49,7 +51,38 @@ Deno.serve(async (req) => {
 
     const contactPhone = (conv as { contact_phone?: string }).contact_phone;
     const contactLang = (conv as { contact_language?: string }).contact_language ?? "en";
-    const vnId = (conv as { virtual_number_id?: string }).virtual_number_id;
+    const vnId = (conv as { virtual_number_id?: string | null }).virtual_number_id;
+
+    const { data: urow, error: uerr } = await admin
+      .from("users")
+      .select("subscription_tier, subscription_expires_at")
+      .eq("id", user.id)
+      .single();
+    if (uerr) throw uerr;
+    const tier = (urow as { subscription_tier?: string }).subscription_tier ?? "free";
+    const expiresAt = (urow as { subscription_expires_at?: string | null }).subscription_expires_at ?? null;
+    const pro = isProSubscriber(tier, expiresAt);
+
+    let effectiveVnId: string | null = vnId ?? null;
+    if (!effectiveVnId) {
+      const { data: vnFirst } = await admin.from("virtual_numbers").select("id").eq("user_id", user.id).limit(1).maybeSingle();
+      effectiveVnId = (vnFirst as { id?: string } | null)?.id ?? null;
+    }
+
+    if (!pro && effectiveVnId) {
+      const outboundCount = await countOutboundSmsForVirtualNumber(admin, effectiveVnId);
+      if (outboundCount >= FREE_TIER_SMS_OUTBOUND_LIMIT) {
+        return jsonResponse(
+          {
+            data: null,
+            error: "sms_quota_exceeded",
+            message:
+              "免费体验额度已用完（50 条出站短信）。订阅 Pro 后可无限发送，或等待后续额度策略更新。",
+          },
+          403,
+        );
+      }
+    }
 
     let fromDid: string;
     if (vnId) {

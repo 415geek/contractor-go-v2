@@ -18,8 +18,8 @@ import { useAuth } from "@clerk/clerk-expo";
 
 import { useProjects } from "@/hooks/useProjects";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
+import { invokeEdgeWithClerk } from "@/lib/api/edge-functions";
 import { parseProjectViaEdge } from "@/lib/api/parse-project";
-import { supabase } from "@/lib/supabase";
 
 type ParseResult = {
   project_name: string | null;
@@ -147,9 +147,8 @@ export default function CreateProjectScreen() {
     try {
       const token = await getToken();
       if (token) {
-        await supabase.functions.invoke("generate-plan", {
+        await invokeEdgeWithClerk<unknown>("generate-plan", token, {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
           body: { project_id: project.id },
         });
       }

@@ -152,6 +152,49 @@ export type TelnyxNumberOrderData = {
   phone_numbers?: Array<{ phone_number?: string }>;
 };
 
+/**
+ * Messaging Profile ID 在 Telnyx 为 UUID。若误把 API Key（KEY…）或 Stripe sk_ 写入 Secret，订购会报 Invalid Messaging Profile ID。
+ * 返回 undefined 时不传该字段，号码仍可订购，稍后在控制台把号码绑定到 Profile。
+ */
+export function parseTelnyxMessagingProfileId(raw: string | undefined | null): string | undefined {
+  if (raw == null) return undefined;
+  const t = String(raw).trim();
+  if (!t) return undefined;
+  if (t.startsWith("KEY")) {
+    console.warn(
+      "[telnyx] TELNYX_MESSAGING_PROFILE_ID looks like an API key (KEY…); omitting — set a Messaging Profile UUID from portal.telnyx.com",
+    );
+    return undefined;
+  }
+  const lower = t.toLowerCase();
+  if (lower.startsWith("sk_live") || lower.startsWith("sk_test")) {
+    console.warn("[telnyx] TELNYX_MESSAGING_PROFILE_ID looks like a Stripe secret; omitting");
+    return undefined;
+  }
+  const uuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuid.test(t)) return t;
+  console.warn(
+    "[telnyx] TELNYX_MESSAGING_PROFILE_ID is not a UUID; omitting — fix Supabase secret or bind the number in Telnyx portal",
+  );
+  return undefined;
+}
+
+/** Connection ID 通常为 UUID；误填 KEY 时同样省略。 */
+export function parseTelnyxConnectionId(raw: string | undefined | null): string | undefined {
+  if (raw == null) return undefined;
+  const t = String(raw).trim();
+  if (!t) return undefined;
+  if (t.startsWith("KEY")) {
+    console.warn("[telnyx] TELNYX_CONNECTION_ID looks like an API key; omitting");
+    return undefined;
+  }
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuid.test(t)) return t;
+  console.warn("[telnyx] TELNYX_CONNECTION_ID is not a UUID; omitting");
+  return undefined;
+}
+
 export async function telnyxCreateNumberOrder(
   apiKey: string,
   phoneNumberE164: string,

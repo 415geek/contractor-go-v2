@@ -1,4 +1,4 @@
-import { edgeFunctionUrl, requireSupabasePublicEnv, supabaseAnonAuthHeaders } from "@/lib/api/supabase-edge";
+import { edgeFunctionClerkHeaders, edgeFunctionUrl, requireSupabasePublicEnv } from "@/lib/api/supabase-edge";
 
 export type ParseProjectResult = {
   project_name: string | null;
@@ -45,8 +45,7 @@ export async function parseProjectViaEdge(
   const res = await fetch(edgeFunctionUrl(url, "parse-project"), {
     method: "POST",
     headers: {
-      ...supabaseAnonAuthHeaders(anonKey),
-      Authorization: `Bearer ${clerkJwt}`,
+      ...edgeFunctionClerkHeaders(anonKey, clerkJwt),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),

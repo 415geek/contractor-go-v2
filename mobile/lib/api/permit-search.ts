@@ -1,4 +1,4 @@
-import { edgeFunctionUrl, requireSupabasePublicEnv } from "@/lib/api/supabase-edge";
+import { edgeFunctionClerkHeaders, edgeFunctionUrl, requireSupabasePublicEnv } from "@/lib/api/supabase-edge";
 
 export type PermitSearchApiResult = {
   address: string;
@@ -19,8 +19,7 @@ export async function searchPermitViaEdge(
   const res = await fetch(edgeFunctionUrl(url, "search-permit"), {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${clerkJwt}`,
-      apikey: anonKey,
+      ...edgeFunctionClerkHeaders(anonKey, clerkJwt),
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ address }),

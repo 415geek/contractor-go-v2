@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-expo";
 
-import { supabase } from "@/lib/supabase";
+import { invokeEdgeWithClerk } from "@/lib/api/edge-functions";
 
 export type EstimateSegment = {
   id: string;
@@ -40,17 +40,11 @@ export function useHouseEstimate() {
     try {
       const token = await getToken();
       if (!token) throw new Error("Not authenticated");
-      const { data, error: fnError } = await supabase.functions.invoke<{
-        data?: HouseEstimateResult;
-        error?: string;
-      }>("estimate-house", {
+      const data = await invokeEdgeWithClerk<HouseEstimateResult>("estimate-house", token, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body: { image_urls: imageUrls },
       });
-      if (fnError) throw fnError;
-      if (data?.error) throw new Error(String(data.error));
-      if (data?.data) setResult(data.data);
+      if (data) setResult(data);
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
       setError(err);

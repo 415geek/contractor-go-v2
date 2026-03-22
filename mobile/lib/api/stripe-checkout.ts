@@ -1,4 +1,4 @@
-import { edgeFunctionUrl, requireSupabasePublicEnv, supabaseAnonAuthHeaders } from "@/lib/api/supabase-edge";
+import { edgeFunctionClerkHeaders, edgeFunctionUrl, requireSupabasePublicEnv } from "@/lib/api/supabase-edge";
 
 export type CreateStripeCheckoutResult = { url: string; id: string };
 
@@ -13,8 +13,7 @@ export async function createStripeCheckoutSession(
   const res = await fetch(edgeFunctionUrl(url, "create-stripe-checkout"), {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${clerkJwt}`,
-      apikey: anonKey,
+      ...edgeFunctionClerkHeaders(anonKey, clerkJwt),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(options ?? {}),

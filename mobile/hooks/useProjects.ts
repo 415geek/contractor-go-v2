@@ -1,7 +1,7 @@
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { supabase } from "@/lib/supabase";
+import { invokeEdgeWithClerk } from "@/lib/api/edge-functions";
 
 export type ProjectStatus = "planning" | "active" | "on_hold" | "completed" | "cancelled";
 
@@ -52,14 +52,7 @@ async function invokeProjects<T>(
 ): Promise<T> {
   const token = await getToken();
   if (!token) throw new Error("Not authenticated");
-  const { data, error } = await supabase.functions.invoke<{ data: T; error: string | null }>("projects", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body,
-  });
-  if (error) throw error;
-  if (data?.error) throw new Error(data.error as string);
-  return data?.data as T;
+  return invokeEdgeWithClerk<T>("projects", token, { method: "POST", body });
 }
 
 async function getProjects(getToken: () => Promise<string | null>, _userId: string, status?: ProjectStatus): Promise<Project[]> {

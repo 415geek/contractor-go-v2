@@ -82,7 +82,9 @@ export class ErrorBoundary extends Component<Props, State> {
                 }
                 if (m.includes("clerk") || m.includes("publishable")) {
                   return (
-                    "请检查：1) Clerk 控制台是否已添加 www.contractorgo.io；2) 生产是否使用 pk_live_；3) F12 查看详细错误。"
+                    "请检查：1) Vercel → 当前项目 → Environment Variables：EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY 是否为 Clerk 控制台真实公钥（不要用 pk_xxx_xxxxxxxx 占位符），保存后 Redeploy；\n" +
+                    "2) www.contractorgo.io 是否绑在「仓库根目录」的 Vercel 项目（与仅 mobile 子目录的预览项目变量互不相通）；\n" +
+                    "3) Clerk → Domains / API Keys 是否已配置生产域名与 pk_live_；4) F12 查看详细错误。"
                   );
                 }
                 return (

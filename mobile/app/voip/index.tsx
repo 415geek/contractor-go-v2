@@ -5,10 +5,12 @@ import { VoipHeader } from "@/components/voip/VoipHeader";
 import { VoipQuickNav } from "@/components/voip/VoipQuickNav";
 import { NumberCard } from "@/components/voip/NumberCard";
 import { useVirtualNumbers } from "@/hooks/useVirtualNumbers";
+import { useMeProfile } from "@/hooks/useMeProfile";
 import { pushPath } from "@/lib/web-navigation";
 
 export default function VoipIndexScreen() {
   const { numbers, isLoading, error, refetch } = useVirtualNumbers();
+  const { data: me } = useMeProfile();
 
   const buyButton = (
     <Pressable
@@ -36,6 +38,17 @@ export default function VoipIndexScreen() {
     <View className="flex-1 bg-gray-900">
       <VoipHeader title="我的号码" right={buyButton} />
       <VoipQuickNav />
+      {me && !me.is_pro && (
+        <Pressable
+          onPress={() => pushPath("/subscription")}
+          className="mx-4 mt-3 rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-2.5"
+        >
+          <Text className="text-amber-200 text-sm font-medium">免费体验额度</Text>
+          <Text className="text-amber-100/90 text-xs mt-1">
+            短信 {me.usage.sms_outbound_sent}/{me.usage.sms_outbound_limit ?? 50} · 升级 Pro 无限发送
+          </Text>
+        </Pressable>
+      )}
       {error && (
         <View className="p-4 bg-red-900/30 mx-4 mt-4 rounded-lg">
           <Text className="text-red-400">{error instanceof Error ? error.message : (error as { message?: string })?.message ?? "Unknown error"}</Text>
