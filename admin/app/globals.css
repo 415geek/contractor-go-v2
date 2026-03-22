@@ -24,6 +24,11 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+    
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-inset-left: env(safe-area-inset-left, 0px);
+    --safe-area-inset-right: env(safe-area-inset-right, 0px);
   }
   .dark {
     --background: 222.2 84% 4.9%;
@@ -49,10 +54,39 @@
 }
 
 @layer base {
+  html {
+    height: -webkit-fill-available;
+    -webkit-tap-highlight-color: transparent;
+  }
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
+}
+
+@layer utilities {
+  .safe-area-top {
+    padding-top: var(--safe-area-inset-top);
+  }
+  .safe-area-bottom {
+    padding-bottom: var(--safe-area-inset-bottom);
+  }
+  .safe-area-left {
+    padding-left: var(--safe-area-inset-left);
+  }
+  .safe-area-right {
+    padding-right: var(--safe-area-inset-right);
+  }
+  .safe-area-x {
+    padding-left: var(--safe-area-inset-left);
+    padding-right: var(--safe-area-inset-right);
+  }
+  .safe-area-y {
+    padding-top: var(--safe-area-inset-top);
+    padding-bottom: var(--safe-area-inset-bottom);
   }
 }

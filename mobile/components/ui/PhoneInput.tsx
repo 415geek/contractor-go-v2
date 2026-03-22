@@ -43,7 +43,7 @@ export function PhoneInput({
 
   return (
     <View className="gap-2">
-      <Text className="text-sm font-medium text-white">手机号</Text>
+      <Text className="text-sm font-medium text-ink">手机号</Text>
       <View
         className={`flex-row items-center rounded-auth-input border bg-surface-card px-4 py-3 ${
           isFocused ? "border-primary-500" : "border-surface-border"
@@ -55,7 +55,7 @@ export function PhoneInput({
           accessibilityLabel="选择国家区号"
           accessibilityRole="button"
         >
-          <Text className="font-semibold text-white">{selectedCountry.code}</Text>
+          <Text className="font-semibold text-ink">{selectedCountry.code}</Text>
         </Pressable>
         <TextInput
           value={phoneNumber}
@@ -64,8 +64,8 @@ export function PhoneInput({
           onBlur={onBlur}
           keyboardType="phone-pad"
           placeholder="请输入手机号"
-          placeholderTextColor="#64748B"
-          className="flex-1 text-base text-white"
+          placeholderTextColor="#64748b"
+          className="flex-1 text-base text-ink"
           maxLength={15}
         />
         {phoneNumber.length > 0 && (
@@ -75,7 +75,7 @@ export function PhoneInput({
             accessibilityLabel="清空"
             hitSlop={8}
           >
-            <Text className="text-sm font-medium text-surface-border">清空</Text>
+            <Text className="text-sm font-medium text-primary-500">清空</Text>
           </Pressable>
         )}
       </View>
@@ -90,8 +90,8 @@ export function PhoneInput({
           className="flex-1 justify-end bg-black/60"
           onPress={() => setIsModalVisible(false)}
         >
-          <View className="rounded-t-3xl bg-surface-card p-6 pb-8">
-            <Text className="mb-4 text-lg font-semibold text-white">选择区号</Text>
+          <View className="rounded-t-3xl border-t border-surface-border bg-surface-card p-6 pb-8">
+            <Text className="mb-4 text-lg font-semibold text-ink">选择区号</Text>
             {COUNTRY_OPTIONS.map((option) => (
               <Pressable
                 key={option.code}
@@ -99,9 +99,9 @@ export function PhoneInput({
                   onCountryCodeChange(option.code);
                   setIsModalVisible(false);
                 }}
-                className="mb-2 min-h-touch items-center justify-center rounded-xl bg-surface-elevated px-4 py-3"
+                className="mb-2 min-h-touch items-center justify-center rounded-xl bg-surface-elevated px-4 py-3 active:bg-surface-highlight"
               >
-                <Text className="text-base font-medium text-white">
+                <Text className="text-base font-medium text-ink">
                   {option.code} · {option.label}
                 </Text>
               </Pressable>

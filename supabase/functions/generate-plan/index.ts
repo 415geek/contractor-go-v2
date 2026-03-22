@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { openAiChatCompletion, stripJsonFence } from "../_shared/openai-chat.ts";
 import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
 import { getUserFromRequest } from "../_shared/get-user.ts";
 
@@ -51,8 +52,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const anthropicKey = getEnv("ANTHROPIC_API_KEY");
-    const prompt = `Generate a construction plan and material list for this project. Output valid JSON only.
+    const prompt = `Generate a construction plan and material list for this project. Output a single valid json object only.
 
 Project: ${project.name}
 Address: ${project.address ?? "N/A"}
@@ -60,7 +60,7 @@ Client: ${project.client_name ?? "N/A"}
 Total cost: ${project.total_cost}
 Duration: ${project.duration_days ?? "N/A"} days
 
-Output JSON:
+JSON shape:
 {
   "construction_plan": {
     "summary": "简短施工方案摘要",
@@ -72,39 +72,31 @@ Output JSON:
   ]
 }`;
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 2048,
-        messages: [{ role: "user", content: prompt }],
-      }),
+    const ai = await openAiChatCompletion({
+      messages: [
+        {
+          role: "system",
+          content: "You are a construction planner. Respond with one valid JSON object only, no markdown.",
+        },
+        { role: "user", content: prompt },
+      ],
+      maxTokens: 2048,
+      responseFormatJsonObject: true,
     });
 
-    const json = await res.json();
-    const content = json.content?.[0]?.text?.trim() ?? "";
-    if (!content) {
+    if (!ai.ok) {
       return jsonResponse(
-        {
-          data: null,
-          error: "generate_failed",
-          message: json.error?.message ?? "No response from Claude",
-        },
-        500,
+        { data: null, error: "generate_failed", message: ai.message },
+        502,
       );
     }
 
     let planPayload: { construction_plan?: unknown; material_list?: unknown[] };
     try {
-      planPayload = JSON.parse(content);
+      planPayload = JSON.parse(stripJsonFence(ai.content));
     } catch {
       return jsonResponse(
-        { data: null, error: "invalid_json", message: "Claude output was not valid JSON" },
+        { data: null, error: "invalid_json", message: "模型输出不是合法 JSON" },
         500,
       );
     }

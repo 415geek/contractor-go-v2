@@ -215,7 +215,7 @@ export function PermissionEditor({ permissions, onSave, saving }: Props) {
                 update("tools", { ...local.tools, permit: e.target.checked })
               }
             />
-            Permit
+            物业信息（Permit / PIM）
           </label>
         </div>
       </section>

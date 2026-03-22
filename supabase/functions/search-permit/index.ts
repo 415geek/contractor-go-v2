@@ -1,5 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeaders } from "../_shared/cors.ts";
+import {
+  detectPermitCity,
+  fetchPermitRowsFromOpenData,
+  normalizePermitAddressTypos,
+  SUPPORTED_PERMIT_CITIES,
+  type PermitCity,
+} from "../_shared/permit-open-data.ts";
+import { openAiChatCompletion, stripJsonFence } from "../_shared/openai-chat.ts";
 import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
 import { getUserFromRequest } from "../_shared/get-user.ts";
 
@@ -9,51 +17,35 @@ function getEnv(name: string): string {
   return v;
 }
 
-const CITY_APIS: Record<string, string> = {
-  "San Francisco": "https://data.sfgov.org/resource/i98e-djp9.json",
-  Oakland: "https://data.oaklandca.gov/resource/building-permits.json",
-  "San Jose": "https://data.sanjoseca.gov/resource/permits.json",
-};
+const CLAUDE_PARSE_PROMPT = (city: PermitCity, sourceHint: string, raw: string) =>
+  `You are parsing official municipal open data rows for building/construction permits.
 
-const SUPPORTED_CITIES = Object.keys(CITY_APIS);
+City: ${city}
+Source: ${sourceHint}
 
-function detectCity(address: string): string | null {
-  const lower = address.toLowerCase();
-  if (lower.includes("san francisco") || lower.includes("sf ")) return "San Francisco";
-  if (lower.includes("oakland")) return "Oakland";
-  if (lower.includes("san jose") || lower.includes("sanjose")) return "San Jose";
-  return null;
-}
+The JSON below is from the city's public permit API (e.g. San Francisco DBI-style fields such as permit_number, street_number, street_name, street_suffix, description, status, filed_date, issued_date, estimated_cost; San Jose may use FOLDERNUMBER, gx_location, WORKDESCRIPTION, ISSUEDATE, etc.).
 
-const CLAUDE_PARSE_PROMPT = (city: string, raw: string) =>
-  `Parse this raw permit data from ${city}.
+Raw rows (JSON array):
+${raw}
 
-Raw: ${raw}
-
-Output JSON:
+Output a single valid json object only (no markdown):
 {
-  "address": "标准化地址",
-  "parcel_number": "地块号",
-  "property_info": {
-    "lot_size_sqft": 5000,
-    "year_built": 1960,
-    "zoning": "R1",
-    "bedrooms": 3,
-    "bathrooms": 2
-  },
+  "address": "normalized address string in Chinese or English as appropriate",
+  "parcel_number": "string or null",
+  "property_info": { "lot_size_sqft": null, "year_built": null, "zoning": null, "bedrooms": null, "bathrooms": null },
   "permit_history": [
     {
-      "permit_number": "B2023-001",
-      "type": "类型",
-      "description": "描述",
+      "permit_number": "string",
+      "type": "string",
+      "description": "string",
       "status": "approved|pending|finaled",
-      "issued_date": "YYYY-MM-DD",
-      "estimated_cost": 50000
+      "issued_date": "YYYY-MM-DD or null",
+      "estimated_cost": number or null
     }
   ],
-  "key_insights": ["近期完成屋顶翻新", "有未解决违规"]
+  "key_insights": ["short bullet in Chinese"]
 }
-Use null for missing fields.`;
+Use null for unknown fields. Map status from raw values sensibly. If rows are empty array, return permit_history: [] and key_insights explaining no matches.`;
 
 Deno.serve(async (req) => {
   const opts = handleOptionsRequest(req);
@@ -70,7 +62,9 @@ Deno.serve(async (req) => {
 
   try {
     const body = (await req.json()) as { address?: string };
-    const address = typeof body.address === "string" ? body.address.trim() : "";
+    const address = normalizePermitAddressTypos(
+      typeof body.address === "string" ? body.address.trim() : "",
+    ).trim();
     if (!address) {
       return jsonResponse(
         { data: null, error: "invalid_body", message: "address required" },
@@ -78,64 +72,55 @@ Deno.serve(async (req) => {
       );
     }
 
-    const city = detectCity(address);
+    const city = detectPermitCity(address);
     if (!city) {
       return new Response(
         JSON.stringify({
           data: null,
           error: "unsupported_city",
-          message: "Address city not supported",
-          supported_cities: SUPPORTED_CITIES,
+          message:
+            "未识别为当前已接入开放数据的城市。请在地址中写明 San Francisco 或 San Jose（或 SF），以便查询对应市政府公开许可数据。",
+          supported_cities: [...SUPPORTED_PERMIT_CITIES],
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const apiUrl = CITY_APIS[city];
-    const addrPart = address.replace(/'/g, "''");
-    const whereClause = `address like '%${addrPart}%'`;
-    const url = `${apiUrl}?$limit=20&$where=${encodeURIComponent(whereClause)}`;
-    const res = await fetch(url, {
-      headers: { "Accept": "application/json" },
-    });
-    const rawData = await res.text();
-    let parsedRaw: unknown;
-    try {
-      parsedRaw = JSON.parse(rawData);
-    } catch {
-      parsedRaw = rawData;
-    }
+    const { rows, source_hint } = await fetchPermitRowsFromOpenData(city, address);
+    const rawPayload = rows.slice(0, 28);
+    const rawStr = JSON.stringify(rawPayload);
 
-    const anthropicKey = getEnv("ANTHROPIC_API_KEY");
-    const parseRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 2048,
-        messages: [
-          {
-            role: "user",
-            content: CLAUDE_PARSE_PROMPT(city, typeof parsedRaw === "string" ? parsedRaw : JSON.stringify(parsedRaw)),
-          },
-        ],
-      }),
+    const ai = await openAiChatCompletion({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You normalize municipal permit open data into structured JSON. Respond with one valid JSON object only.",
+        },
+        { role: "user", content: PERMIT_PARSE_PROMPT(city, source_hint, rawStr) },
+      ],
+      maxTokens: 2048,
+      responseFormatJsonObject: true,
     });
-    const parseJson = await parseRes.json();
-    const content = parseJson.content?.[0]?.text?.trim() ?? "";
+
     let parsedResult: Record<string, unknown> = {};
-    if (content) {
+    if (ai.ok) {
       try {
-        parsedResult = JSON.parse(content);
+        parsedResult = JSON.parse(stripJsonFence(ai.content));
       } catch {
-        parsedResult = { address, raw_preview: rawData.slice(0, 500) };
+        parsedResult = {
+          address,
+          permit_history: [],
+          key_insights: ["无法解析 AI 输出，请稍后重试。"],
+          raw_preview: rawStr.slice(0, 500),
+        };
       }
     } else {
-      parsedResult = { address, raw_preview: rawData.slice(0, 500) };
+      parsedResult = {
+        address,
+        permit_history: [],
+        key_insights: [`OpenAI: ${ai.message}`],
+      };
     }
 
     const supabaseUrl = getEnv("SUPABASE_URL");
@@ -147,13 +132,13 @@ Deno.serve(async (req) => {
       user_id: user.id,
       address,
       city,
-      raw_data: parsedRaw,
+      raw_data: { source_hint, row_count: rows.length, sample: rawPayload },
       parsed_result: parsedResult,
     });
 
     return jsonResponse({
       data: {
-        address: parsedResult.address ?? address,
+        address: (parsedResult.address as string) ?? address,
         city,
         property_info: parsedResult.property_info ?? null,
         permit_history: parsedResult.permit_history ?? [],

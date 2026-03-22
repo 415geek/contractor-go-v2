@@ -23,16 +23,17 @@ export type MaterialSearchResponse = {
 };
 
 export async function searchMaterialPrices(
-  payload: MaterialSearchPayload
+  getToken: () => Promise<string | null>,
+  payload: MaterialSearchPayload,
 ): Promise<MaterialSearchResponse> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error("Not authenticated");
+  const token = await getToken();
+  if (!token) throw new Error("Not authenticated");
   const { data, error } = await supabase.functions.invoke<{
     data?: MaterialSearchResponse;
     error?: string;
   }>("search-material", {
     method: "POST",
-    headers: { Authorization: `Bearer ${session.access_token}` },
+    headers: { Authorization: `Bearer ${token}` },
     body: payload,
   });
   if (error) throw error;

@@ -15,7 +15,28 @@
       "predictiveBackGestureEnabled": false
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "用于在应用内选择材料或房屋照片，以便比价与估价。",
+          "cameraPermission": "用于拍摄现场或材料照片。"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "用于 AR 测距：在相机画面上取点估算长度。",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "用于水平仪：读取重力方向以显示倾角。"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

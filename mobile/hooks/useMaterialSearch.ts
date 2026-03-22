@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useAuth } from "@clerk/clerk-expo";
 
 import {
   searchMaterialPrices,
@@ -13,6 +14,7 @@ type MaterialSearchState = {
 };
 
 export function useMaterialSearch() {
+  const { getToken } = useAuth();
   const [state, setState] = useState<MaterialSearchState>({
     isSearching: false,
     results: null,
@@ -23,7 +25,7 @@ export function useMaterialSearch() {
     async (imageUrls: string[], description?: string) => {
       setState((s) => ({ ...s, isSearching: true, error: null }));
       try {
-        const results = await searchMaterialPrices({
+        const results = await searchMaterialPrices(getToken, {
           image_urls: imageUrls.length > 0 ? imageUrls : undefined,
           description: description || undefined,
         });
@@ -35,7 +37,7 @@ export function useMaterialSearch() {
         throw err;
       }
     },
-    []
+    [getToken],
   );
 
   const retry = useCallback(() => {

@@ -1,4 +1,5 @@
 import "../global.css";
+import * as WebBrowser from "expo-web-browser";
 
 import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { tokenCache } from "@/lib/clerk-token-cache";
@@ -6,10 +7,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Platform, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { WebResponsiveWrapper } from "@/components/WebResponsiveWrapper";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { theme } from "@/lib/theme";
+
+WebBrowser.maybeCompleteAuthSession({ skipRedirectCheck: true });
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,19 +33,23 @@ function RootNavigator() {
 
   useEffect(() => {
     if (!isLoaded) return;
+    if (isSignedIn) return;
+
+    // 未登录：非 auth / landing / sso-callback 时，默认回落地页
+    // （Web OAuth 完成地址已统一为 /sso-callback，见 login.tsx，避免先到 /home 再误判）
     const inAuthGroup = segments[0] === "(auth)";
     const inLanding = segments[0] === "landing";
-    if (isSignedIn && inAuthGroup) {
-      router.replace("/(tabs)");
-    } else if (!isSignedIn && !inAuthGroup && !inLanding) {
-      router.replace("/landing");
-    }
-  }, [isSignedIn, isLoaded, segments]);
+    const inSSO = segments[0] === "sso-callback";
+
+    if (inAuthGroup || inLanding || inSSO) return;
+
+    router.replace("/landing");
+  }, [isSignedIn, isLoaded, segments, router]);
 
   if (!isLoaded) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#0F172A", alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="large" color="#2563EB" />
+      <View style={{ flex: 1, backgroundColor: theme.bg, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -48,27 +58,44 @@ function RootNavigator() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: "#0F172A" },
-        animation: "fade",
+        contentStyle: { backgroundColor: theme.bg },
+        animation: Platform.OS === "ios" ? "slide_from_right" : "fade",
+        animationDuration: 250,
+        gestureEnabled: Platform.OS === "ios",
+        gestureDirection: "horizontal",
+        fullScreenGestureEnabled: true,
       }}
     />
   );
 }
 
+const clerkKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
 export default function RootLayout() {
+  if (!clerkKey?.trim()) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.bg, padding: 24, justifyContent: "center" }}>
+        <Text style={{ color: theme.danger, fontSize: 16 }}>缺少 EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY，请在 .env 中配置</Text>
+      </View>
+    );
+  }
   return (
-    <ClerkProvider
-      publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
-      tokenCache={tokenCache}
-    >
-      <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider>
-          <WebResponsiveWrapper>
-            <StatusBar style="light" />
-            <RootNavigator />
-          </WebResponsiveWrapper>
-        </SafeAreaProvider>
-      </QueryClientProvider>
-    </ClerkProvider>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ClerkProvider
+          publishableKey={clerkKey}
+          tokenCache={Platform.OS === "web" ? undefined : tokenCache}
+        >
+        <QueryClientProvider client={queryClient}>
+          <SafeAreaProvider>
+            <WebResponsiveWrapper>
+              <StatusBar style="light" />
+              <RootNavigator />
+            </WebResponsiveWrapper>
+          </SafeAreaProvider>
+        </QueryClientProvider>
+      </ClerkProvider>
+    </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }

@@ -1,18 +1,21 @@
 import { useSignIn, useSignUp } from "@clerk/clerk-expo";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { OtpInput } from "@/components/ui/OtpInput";
+import { replaceSignedInHome } from "@/lib/web-navigation";
 
 type VerifyFlow = "sign-in" | "sign-up-phone" | "sign-up-email";
 
@@ -25,6 +28,7 @@ function maskPhone(phone: string): string {
 
 export default function VerifyScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { phone, email, flow } = useLocalSearchParams<{
     phone?: string;
     email?: string;
@@ -37,6 +41,14 @@ export default function VerifyScreen() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(60);
+
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, { toValue: 0.97, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
+  };
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
+  };
 
   const masked = phone ? maskPhone(phone) : email ?? "";
   const isPhone = flow !== "sign-up-email";
@@ -58,19 +70,19 @@ export default function VerifyScreen() {
         });
         if (result.status === "complete") {
           await setActiveSignIn!({ session: result.createdSessionId! });
-          router.replace("/(tabs)");
+          replaceSignedInHome();
         }
       } else if (flow === "sign-up-phone") {
         const result = await signUp!.attemptPhoneNumberVerification({ code: nextCode });
         if (result.status === "complete") {
           await setActiveSignUp!({ session: result.createdSessionId! });
-          router.replace("/(tabs)");
+          replaceSignedInHome();
         }
       } else {
         const result = await signUp!.attemptEmailAddressVerification({ code: nextCode });
         if (result.status === "complete") {
           await setActiveSignUp!({ session: result.createdSessionId! });
-          router.replace("/(tabs)");
+          replaceSignedInHome();
         }
       }
     } catch (err) {
@@ -109,27 +121,37 @@ export default function VerifyScreen() {
     }
   };
 
+  const canVerify = code.length === 6 && signInLoaded && signUpLoaded && !loading;
+
   return (
-    <SafeAreaView className="flex-1 bg-surface-app" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-surface-app" edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <View className="flex-1 px-5 pt-4 pb-8">
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: Math.max(insets.bottom, 24) }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+        <View className="flex-1 px-5 pt-4">
           <Pressable
             onPress={() => router.back()}
-            className="self-start rounded-lg py-2 pr-2 -ml-2"
+            className="self-start rounded-lg py-2 pr-2 -ml-2 active:opacity-70"
             accessibilityLabel="返回"
             accessibilityRole="button"
+            hitSlop={12}
           >
             <Text className="text-base font-medium text-primary-500">← 返回</Text>
           </Pressable>
 
           <View className="mt-8">
-            <Text className="text-2xl font-bold tracking-tight text-white">
+            <Text className="text-2xl font-bold tracking-tight text-ink">
               输入验证码
             </Text>
-            <Text className="mt-2 text-sm leading-5 text-surface-border">
+            <Text className="mt-2 text-sm leading-5 text-ink-secondary">
               {isPhone
                 ? `验证码已发送至 ${masked}，请查收短信后输入 6 位数字`
                 : `验证码已发送至 ${masked}，请查收邮件后输入 6 位数字`}
@@ -145,30 +167,37 @@ export default function VerifyScreen() {
 
             <Pressable
               onPress={() => void handleVerify(code)}
-              disabled={loading || code.length !== 6}
-              className="mt-6 min-h-touch items-center justify-center rounded-auth-button bg-primary-500 px-5 py-3.5 disabled:opacity-50"
+              onPressIn={handlePressIn}
+              onPressOut={handlePressOut}
+              disabled={!canVerify}
             >
-              {loading ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Text className="text-base font-semibold text-white">验证并登录</Text>
-              )}
+              <Animated.View
+                className="mt-6 min-h-touch items-center justify-center rounded-auth-button bg-primary-500 px-5 py-3.5 shadow-button"
+                style={{ transform: [{ scale: scaleAnim }], opacity: canVerify ? 1 : 0.5 }}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text className="text-base font-semibold text-white">验证并登录</Text>
+                )}
+              </Animated.View>
             </Pressable>
           </View>
 
           <View className="mt-auto gap-3 pt-8">
-            <Text className="text-center text-sm text-surface-border">
+            <Text className="text-center text-sm text-ink-secondary">
               {countdown > 0 ? `${countdown}s 后可重新发送` : "没收到验证码？"}
             </Text>
             <Pressable
               onPress={() => void handleResend()}
               disabled={countdown > 0 || loading}
-              className="min-h-touch items-center justify-center rounded-auth-button border border-surface-border bg-surface-card px-5 py-3.5 disabled:opacity-50"
+              className="min-h-touch items-center justify-center rounded-auth-button border border-surface-border bg-surface-card px-5 py-3.5 active:bg-surface-elevated disabled:opacity-50"
             >
-              <Text className="text-base font-semibold text-white">重新发送验证码</Text>
+              <Text className="text-base font-semibold text-ink">重新发送验证码</Text>
             </Pressable>
           </View>
         </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

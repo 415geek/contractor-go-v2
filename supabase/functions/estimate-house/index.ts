@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { openAiChatCompletion, stripJsonFence } from "../_shared/openai-chat.ts";
 import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
 import { getUserFromRequest } from "../_shared/get-user.ts";
 
@@ -55,47 +56,39 @@ Deno.serve(async (req) => {
       );
     }
 
-    const anthropicKey = getEnv("ANTHROPIC_API_KEY");
-    const imageContent = imageUrls.slice(0, 5).map((url) => ({
-      type: "image" as const,
-      source: { type: "url" as const, url },
-    }));
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 2048,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: VISION_PROMPT(imageUrls) },
-              ...imageContent,
-            ],
-          },
-        ],
-      }),
+    const userContent = [
+      { type: "text" as const, text: VISION_PROMPT(imageUrls) },
+      ...imageUrls.slice(0, 5).map((url) => ({
+        type: "image_url" as const,
+        image_url: { url, detail: "low" as const },
+      })),
+    ];
+    const ai = await openAiChatCompletion({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You estimate renovation materials from photos. Respond with one valid JSON object only, no markdown.",
+        },
+        { role: "user", content: userContent },
+      ],
+      maxTokens: 2048,
+      responseFormatJsonObject: true,
     });
-    const json = await res.json();
-    const content = json.content?.[0]?.text?.trim() ?? "";
-    if (!content) {
+
+    if (!ai.ok) {
       return jsonResponse(
-        { data: null, error: "analyze_failed", message: json.error?.message ?? "No response" },
-        500,
+        { data: null, error: "analyze_failed", message: ai.message },
+        502,
       );
     }
 
     let analysis: Record<string, unknown>;
     try {
-      analysis = JSON.parse(content);
+      analysis = JSON.parse(stripJsonFence(ai.content));
     } catch {
       return jsonResponse(
-        { data: null, error: "invalid_json", message: "Claude output was not valid JSON" },
+        { data: null, error: "invalid_json", message: "模型输出不是合法 JSON" },
         500,
       );
     }

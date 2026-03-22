@@ -1,11 +1,6 @@
+import { openAiChatCompletion, stripJsonFence } from "../_shared/openai-chat.ts";
 import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
 import { getUserFromRequest } from "../_shared/get-user.ts";
-
-function getEnv(name: string): string {
-  const v = Deno.env.get(name);
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
-}
 
 type ParseResult = {
   project_name: string | null;
@@ -22,12 +17,12 @@ type ParseResult = {
   notes: string | null;
 };
 
-const CLAUDE_PROMPT = (userInput: string) =>
+const PARSE_PROJECT_PROMPT = (userInput: string) =>
   `Parse this construction project description. Extract:
 
 Input: ${userInput}
 
-Output JSON only:
+Output a single JSON object (valid json) with these keys only:
 {
   "project_name": "项目名称",
   "address": "完整地址",
@@ -42,7 +37,7 @@ Output JSON only:
   "key_tasks": ["任务1"],
   "notes": "备注"
 }
-Use null for missing fields.`;
+Use null for missing fields. No markdown, no code fences.`;
 
 Deno.serve(async (req) => {
   const opts = handleOptionsRequest(req);
@@ -62,6 +57,8 @@ Deno.serve(async (req) => {
       input?: string;
       input_type?: "text" | "voice";
       audio_url?: string;
+      audio_base64?: string;
+      audio_mime?: string;
     };
     const inputType = body.input_type === "voice" ? "voice" : "text";
     let text = typeof body.input === "string" ? body.input.trim() : "";
@@ -116,35 +113,43 @@ Deno.serve(async (req) => {
       return jsonResponse({ data: null, error: "invalid_body", message: "input required" }, 400);
     }
 
-    const anthropicKey = getEnv("ANTHROPIC_API_KEY");
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 1024,
-        messages: [{ role: "user", content: CLAUDE_PROMPT(text) }],
-      }),
+    const ai = await openAiChatCompletion({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You extract structured project data. Always respond with a single valid JSON object only, no markdown.",
+        },
+        { role: "user", content: PARSE_PROJECT_PROMPT(text) },
+      ],
+      maxTokens: 1024,
+      responseFormatJsonObject: true,
     });
 
-    const json = await res.json();
-    const content = json.content?.[0]?.text?.trim() ?? "";
-    if (!content) {
+    if (!ai.ok) {
+      return jsonResponse(
+        {
+          data: null,
+          error: "openai_error",
+          message: ai.message,
+        },
+        502,
+      );
+    }
+
+    let parsed: ParseResult;
+    try {
+      parsed = JSON.parse(stripJsonFence(ai.content)) as ParseResult;
+    } catch {
       return jsonResponse(
         {
           data: null,
           error: "parse_failed",
-          message: json.error?.message ?? "No response from Claude",
+          message: "模型返回内容不是合法 JSON，请缩短描述或重试",
         },
-        500,
+        422,
       );
     }
-
-    const parsed = JSON.parse(content) as ParseResult;
     return jsonResponse({
       data: { parsed, raw_text: text },
       error: null,

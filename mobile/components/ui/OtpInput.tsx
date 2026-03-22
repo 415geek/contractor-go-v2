@@ -57,8 +57,8 @@ export function OtpInput({
           maxLength={index === 0 ? length : 1}
           textAlign="center"
           placeholder="·"
-          placeholderTextColor="#475569"
-          className="h-14 flex-1 rounded-auth-input border border-surface-border bg-surface-card text-xl font-semibold text-white"
+          placeholderTextColor="#64748b"
+          className="h-12 flex-1 rounded-auth-input border-2 border-surface-border bg-surface-card text-lg font-semibold text-ink"
           selectTextOnFocus
         />
       ))}

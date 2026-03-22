@@ -42,7 +42,12 @@ Deno.serve(async (req) => {
 
     const phoneNumber = normalizeDid(did);
     const client = new VoipMsClient(getEnv("VOIPMS_USERNAME"), getEnv("VOIPMS_PASSWORD"));
-    await client.orderDID(phoneNumber);
+    const monthlyStr = typeof body.monthly === "string" ? body.monthly.trim() : "";
+    const setupStr = typeof body.setup === "string" ? body.setup.trim() : "";
+    await client.orderDID(did, {
+      monthly: monthlyStr || undefined,
+      setup: setupStr || undefined,
+    });
 
     const admin = createAdminClient();
     const monthly = typeof body.monthly === "string" ? parseFloat(body.monthly) || 0 : 0;

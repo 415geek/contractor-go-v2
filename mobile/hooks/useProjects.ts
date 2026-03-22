@@ -1,7 +1,7 @@
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { createAuthenticatedClient } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 export type ProjectStatus = "planning" | "active" | "on_hold" | "completed" | "cancelled";
 
@@ -46,95 +46,46 @@ export type ProjectInsert = {
   notes?: string | null;
 };
 
-async function getProjects(getToken: () => Promise<string | null>, userId: string, status?: ProjectStatus): Promise<Project[]> {
+async function invokeProjects<T>(
+  getToken: () => Promise<string | null>,
+  body: Record<string, unknown>,
+): Promise<T> {
   const token = await getToken();
-  if (!token || !userId) throw new Error("Not authenticated");
-  const client = createAuthenticatedClient(token);
-  let q = client
-    .from("projects")
-    .select("*")
-    .eq("user_id", userId)
-    .order("start_date", { ascending: false, nullsFirst: false });
-  if (status) q = q.eq("status", status);
-  const { data, error } = await q;
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Project[];
+  if (!token) throw new Error("Not authenticated");
+  const { data, error } = await supabase.functions.invoke<{ data: T; error: string | null }>("projects", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body,
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error as string);
+  return data?.data as T;
 }
 
-async function getProject(getToken: () => Promise<string | null>, userId: string, id: string): Promise<Project | null> {
-  const token = await getToken();
-  if (!token || !userId) throw new Error("Not authenticated");
-  const client = createAuthenticatedClient(token);
-  const { data, error } = await client
-    .from("projects")
-    .select("*")
-    .eq("id", id)
-    .eq("user_id", userId)
-    .single();
-  if (error) {
-    if (error.code === "PGRST116") return null;
-    throw new Error(error.message);
-  }
-  return data as Project;
+async function getProjects(getToken: () => Promise<string | null>, _userId: string, status?: ProjectStatus): Promise<Project[]> {
+  const data = await invokeProjects<Project[]>(getToken, { action: "list", status });
+  return data ?? [];
 }
 
-async function createProject(getToken: () => Promise<string | null>, userId: string, row: ProjectInsert): Promise<Project> {
-  const token = await getToken();
-  if (!token || !userId) throw new Error("Not authenticated");
-  const client = createAuthenticatedClient(token);
-  const { data, error } = await client
-    .from("projects")
-    .insert({
-      user_id: userId,
-      name: row.name,
-      address: row.address ?? null,
-      client_name: row.client_name ?? null,
-      client_phone: row.client_phone ?? null,
-      client_email: row.client_email ?? null,
-      total_cost: row.total_cost ?? 0,
-      labor_cost: row.labor_cost ?? 0,
-      material_cost: row.material_cost ?? 0,
-      contract_type: row.contract_type ?? null,
-      start_date: row.start_date ?? null,
-      end_date: row.end_date ?? null,
-      duration_days: row.duration_days ?? null,
-      status: row.status ?? "planning",
-      notes: row.notes ?? null,
-    })
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-  return data as Project;
+async function getProject(getToken: () => Promise<string | null>, _userId: string, id: string): Promise<Project | null> {
+  const data = await invokeProjects<Project | null>(getToken, { action: "get", id });
+  return data ?? null;
 }
 
-async function updateProject(getToken: () => Promise<string | null>, userId: string, id: string, row: Partial<ProjectInsert>): Promise<Project> {
-  const token = await getToken();
-  if (!token || !userId) throw new Error("Not authenticated");
-  const client = createAuthenticatedClient(token);
-  const { data, error } = await client
-    .from("projects")
-    .update({
-      ...row,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id)
-    .eq("user_id", userId)
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-  return data as Project;
+async function createProject(getToken: () => Promise<string | null>, _userId: string, row: ProjectInsert): Promise<Project> {
+  const data = await invokeProjects<Project>(getToken, { action: "create", row });
+  if (!data) throw new Error("No data returned");
+  return data;
 }
 
-async function deleteProject(getToken: () => Promise<string | null>, userId: string, id: string): Promise<void> {
-  const token = await getToken();
-  if (!token || !userId) throw new Error("Not authenticated");
-  const client = createAuthenticatedClient(token);
-  const { error } = await client
-    .from("projects")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", userId);
-  if (error) throw new Error(error.message);
+async function updateProject(getToken: () => Promise<string | null>, _userId: string, id: string, row: Partial<ProjectInsert>): Promise<Project> {
+  const data = await invokeProjects<Project>(getToken, { action: "update", id, updates: row });
+  if (!data) throw new Error("No data returned");
+  return data;
+}
+
+async function deleteProject(getToken: () => Promise<string | null>, _userId: string, id: string): Promise<void> {
+  await invokeProjects<null>(getToken, { action: "delete", id });
 }
 
 export function useProjects(status?: ProjectStatus) {

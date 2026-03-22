@@ -1,50 +1,31 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+
+import { CenterHomeTabBar } from "@/components/navigation/CenterHomeTabBar";
+import { theme } from "@/lib/theme";
 
 export default function TabsLayout() {
   return (
     <Tabs
+      initialRouteName="home"
+      tabBar={(props) => <CenterHomeTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "#3B82F6",
-        tabBarInactiveTintColor: "#9CA3AF",
+        tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: "#0F172A",
-          borderTopColor: "#1E293B",
+          backgroundColor: "transparent",
+          borderTopWidth: 0,
+          elevation: 0,
         },
         sceneStyle: {
-          backgroundColor: "#0F172A",
+          backgroundColor: theme.bg,
         },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "消息",
-          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubble-ellipses-outline" color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="projects"
-        options={{
-          title: "项目",
-          tabBarIcon: ({ color, size }) => <Ionicons name="briefcase-outline" color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="tools"
-        options={{
-          title: "工具",
-          tabBarIcon: ({ color, size }) => <Ionicons name="construct-outline" color={color} size={size} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "我的",
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" color={color} size={size} />,
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: "消息" }} />
+      <Tabs.Screen name="projects" options={{ title: "项目" }} />
+      <Tabs.Screen name="home" options={{ title: "首页" }} />
+      <Tabs.Screen name="tools" options={{ title: "工具" }} />
+      <Tabs.Screen name="profile" options={{ title: "我的" }} />
     </Tabs>
   );
 }

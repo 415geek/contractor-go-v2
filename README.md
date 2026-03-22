@@ -229,9 +229,10 @@ cp mobile/.env.example mobile/.env.production
 
 ## 常见问题
 
-### 1. 移动端报 `Missing EXPO_PUBLIC_SUPABASE_URL`
+### 1. 移动端报缺少 `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 
-说明 `mobile/.env.local` 未配置，或 Expo 重启前没有读取到新变量。保存 `.env.local` 后重启 `npx expo start`。
+- **本地**：复制 `mobile/.env.example` 为 `mobile/.env`（或 `.env.local`），填入两项后**重启** `npx expo`。
+- **Vercel（www.contractorgo.io）**：在 **contractorgo-web** → **Settings** → **Environment Variables** 里为 **Production**（及需要的 Preview）添加同名变量，值与 `mobile/.env.example` 一致即可；**保存后必须 Redeploy**，否则构建阶段仍拿不到变量。详见 `docs/VERCEL_SETUP.md`。
 
 ### 2. Edge Function 报缺少 `SUPABASE_SERVICE_ROLE_KEY`
 

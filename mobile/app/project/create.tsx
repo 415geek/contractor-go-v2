@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system";
+import { readAsStringAsync, EncodingType } from "expo-file-system/legacy";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -18,6 +18,7 @@ import { useAuth } from "@clerk/clerk-expo";
 
 import { useProjects } from "@/hooks/useProjects";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
+import { parseProjectViaEdge } from "@/lib/api/parse-project";
 import { supabase } from "@/lib/supabase";
 
 type ParseResult = {
@@ -54,6 +55,8 @@ export default function CreateProjectScreen() {
   const [aiInput, setAiInput] = useState("");
   const [parseLoading, setParseLoading] = useState(false);
   const [parsed, setParsed] = useState<ParseResult | null>(null);
+  /** Web 上 Alert 常不可见，用行内提示 */
+  const [parseBanner, setParseBanner] = useState<{ kind: "error" | "info"; text: string } | null>(null);
   const { isRecording, duration, startRecording, stopRecording } = useVoiceRecording();
 
   const applyParsed = (p: ParseResult) => {
@@ -66,31 +69,34 @@ export default function CreateProjectScreen() {
     setDurationDays(p.duration_days != null ? String(p.duration_days) : "");
   };
 
+  const showParseError = (title: string, message: string) => {
+    setParseBanner({ kind: "error", text: `${title}${message ? `：${message}` : ""}` });
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      window.alert(`${title}\n${message}`);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
+
   const handleAiParse = async () => {
     const text = aiInput.trim();
     if (!text) return;
     setParseLoading(true);
     setParsed(null);
+    setParseBanner(null);
     try {
       const token = await getToken();
       if (!token) throw new Error("未登录");
-      const { data, error } = await supabase.functions.invoke<{
-        data?: { parsed: ParseResult };
-        error?: string;
-      }>("parse-project", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: { input: text, input_type: "text" },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(String(data.error));
-      const result = data?.data?.parsed;
-      if (result) {
-        setParsed(result);
-        applyParsed(result);
+      const { parsed: result } = await parseProjectViaEdge(token, { input: text, input_type: "text" });
+      if (!result) {
+        throw new Error("服务未返回解析结果，请重试");
       }
+      setParsed(result);
+      applyParsed(result);
+      setParseBanner({ kind: "info", text: "解析完成，请确认下方字段后保存。" });
     } catch (e) {
-      Alert.alert("解析失败", e instanceof Error ? e.message : "请重试");
+      const msg = e instanceof Error ? e.message : "请重试";
+      showParseError("解析失败", msg);
     } finally {
       setParseLoading(false);
     }
@@ -99,33 +105,27 @@ export default function CreateProjectScreen() {
   const doVoiceParse = async (uri: string) => {
     setParseLoading(true);
     setParsed(null);
+    setParseBanner(null);
     try {
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
+      const base64 = await readAsStringAsync(uri, {
+        encoding: EncodingType.Base64,
       });
       const token = await getToken();
       if (!token) throw new Error("未登录");
-      const { data, error } = await supabase.functions.invoke<{
-        data?: { parsed: ParseResult };
-        error?: string;
-      }>("parse-project", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: {
-          input_type: "voice",
-          audio_base64: base64,
-          audio_mime: "audio/webm",
-        },
+      const { parsed: result } = await parseProjectViaEdge(token, {
+        input_type: "voice",
+        audio_base64: base64,
+        audio_mime: Platform.OS === "ios" ? "audio/m4a" : "audio/webm",
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(String(data.error));
-      const result = data?.data?.parsed;
-      if (result) {
-        setParsed(result);
-        applyParsed(result);
+      if (!result) {
+        throw new Error("服务未返回解析结果，请重试");
       }
+      setParsed(result);
+      applyParsed(result);
+      setParseBanner({ kind: "info", text: "语音解析完成，请确认下方字段后保存。" });
     } catch (e) {
-      Alert.alert("语音解析失败", e instanceof Error ? e.message : "请重试");
+      const msg = e instanceof Error ? e.message : "请重试";
+      showParseError("语音解析失败", msg);
     } finally {
       setParseLoading(false);
     }
@@ -176,7 +176,11 @@ export default function CreateProjectScreen() {
         </View>
         <View className="mt-4 flex-row rounded-lg bg-slate-800 p-1">
           <Pressable
-            onPress={() => { setMode("manual"); setParsed(null); }}
+            onPress={() => {
+              setMode("manual");
+              setParsed(null);
+              setParseBanner(null);
+            }}
             className={`flex-1 rounded-md py-2 ${mode === "manual" ? "bg-slate-700" : ""}`}
           >
             <Text className={`text-center text-sm font-medium ${mode === "manual" ? "text-white" : "text-slate-400"}`}>
@@ -184,7 +188,10 @@ export default function CreateProjectScreen() {
             </Text>
           </Pressable>
           <Pressable
-            onPress={() => setMode("ai")}
+            onPress={() => {
+              setMode("ai");
+              setParseBanner(null);
+            }}
             className={`flex-1 rounded-md py-2 ${mode === "ai" ? "bg-slate-700" : ""}`}
           >
             <Text className={`text-center text-sm font-medium ${mode === "ai" ? "text-white" : "text-slate-400"}`}>
@@ -212,6 +219,17 @@ export default function CreateProjectScreen() {
                 className="min-h-[120] rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-3 text-white"
               />
             </View>
+            {parseBanner != null && (
+              <View
+                className={`rounded-lg px-3 py-2 ${parseBanner.kind === "error" ? "bg-red-900/40" : "bg-blue-900/30"}`}
+              >
+                <Text
+                  className={`text-sm ${parseBanner.kind === "error" ? "text-red-300" : "text-blue-200"}`}
+                >
+                  {parseBanner.text}
+                </Text>
+              </View>
+            )}
             <View className="flex-row gap-3">
               <Pressable
                 onPress={handleAiParse}
@@ -251,7 +269,10 @@ export default function CreateProjectScreen() {
             <Text className="text-slate-300">开工: {parsed.start_date ?? "-"}</Text>
             <Text className="text-slate-300">工期: {parsed.duration_days ?? "-"} 天</Text>
             <Pressable
-              onPress={() => setParsed(null)}
+              onPress={() => {
+                setParsed(null);
+                setParseBanner(null);
+              }}
               className="mt-2"
             >
               <Text className="text-sm text-blue-400">重新解析</Text>

@@ -1,27 +1,25 @@
-"use client";
-
 import { useOAuth, useSignIn, useSignUp } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import * as AuthSession from "expo-auth-session";
-import * as WebBrowser from "expo-web-browser";
 import { router } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { useLang } from "@/lib/i18n";
-
-WebBrowser.maybeCompleteAuthSession();
+import { replaceSignedInHome } from "@/lib/web-navigation";
 
 const LABELS = {
   zh: {
@@ -82,6 +80,7 @@ type Tab = "phone" | "email";
 export default function LoginScreen() {
   const { lang } = useLang();
   const L = LABELS[lang] ?? LABELS.zh;
+  const insets = useSafeAreaInsets();
 
   const { signIn, setActive: setActiveSignIn, isLoaded: signInLoaded } = useSignIn();
   const { signUp, setActive: setActiveSignUp, isLoaded: signUpLoaded } = useSignUp();
@@ -94,6 +93,15 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, { toValue: 0.97, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
+  };
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
+  };
 
   const fullPhone = useMemo(() => `${countryCode}${phoneNumber}`, [countryCode, phoneNumber]);
   const canSendOtp = phoneNumber.length >= 8 && !loading;
@@ -140,7 +148,7 @@ export default function LoginScreen() {
       const result = await signIn!.create({ identifier: email, password });
       if (result.status === "complete") {
         await setActiveSignIn!({ session: result.createdSessionId! });
-        router.replace("/(tabs)");
+        replaceSignedInHome();
       }
     } catch {
       // User not found → create account
@@ -148,7 +156,7 @@ export default function LoginScreen() {
         const result = await signUp!.create({ emailAddress: email, password });
         if (result.status === "complete") {
           await setActiveSignUp!({ session: result.createdSessionId! });
-          router.replace("/(tabs)");
+          replaceSignedInHome();
         } else {
           await signUp!.prepareEmailAddressVerification({ strategy: "email_code" });
           router.push({ pathname: "/(auth)/verify", params: { email, flow: "sign-up-email" } });
@@ -167,20 +175,33 @@ export default function LoginScreen() {
     async (provider: "google" | "github") => {
       setLoading(true);
       try {
+        if (Platform.OS === "web") {
+          // Web: full-page redirect flow avoids popup/COOP/Turnstile issues entirely.
+          // Clerk will redirect back to /sso-callback which completes the session.
+          const strategy = `oauth_${provider}` as `oauth_${typeof provider}`;
+          const cb = `${window.location.origin}/sso-callback`;
+          await signIn!.authenticateWithRedirect({
+            strategy,
+            // OAuth 回到 /sso-callback；完成会话后再由 sso-callback 页进入 /home。
+            // 若 redirectUrlComplete 设为 /home，Clerk 可能在客户端 isSignedIn 仍为 false 时先跳到 /home，
+            // 会触发全局路由守卫里的误判（约 1～2 秒内被踢回落地页/登录）。
+            redirectUrl: cb,
+            redirectUrlComplete: cb,
+          });
+          // Full page navigates away — no further code executes here.
+          return;
+        }
+
+        // Native: popup-based OAuth with deep-link redirect scheme.
         const flow = provider === "google" ? startGoogle : startGitHub;
         const redirectUrl = AuthSession.makeRedirectUri({ scheme: "contractorgo" });
-        const { createdSessionId, setActive, signUp } = await flow({ redirectUrl });
+        const { createdSessionId, setActive, signUp: oauthSignUp } = await flow({ redirectUrl });
         if (createdSessionId && setActive) {
-          // Existing user: session created directly
           await setActive({ session: createdSessionId });
-          router.replace("/(tabs)");
-        } else if (signUp?.status === "complete" && signUp.createdSessionId && setActive) {
-          // New user: sign-up completed via OAuth
-          await setActive({ session: signUp.createdSessionId });
-          router.replace("/(tabs)");
-        } else if (!createdSessionId) {
-          // OAuth flow returned without a session (cancelled or incomplete)
-          Alert.alert(L.failTitle, provider === "google" ? "Google 登录未完成，请重试" : "GitHub 登录未完成，请重试");
+          replaceSignedInHome();
+        } else if (oauthSignUp?.status === "complete" && oauthSignUp.createdSessionId && setActive) {
+          await setActive({ session: oauthSignUp.createdSessionId });
+          replaceSignedInHome();
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : L.failTitle;
@@ -189,40 +210,47 @@ export default function LoginScreen() {
         setLoading(false);
       }
     },
-    [startGoogle, startGitHub, L.failTitle]
+    [signIn, startGoogle, startGitHub, L.failTitle]
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-app" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-surface-app" edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <View className="flex-1 px-5 pt-4 pb-8">
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: Math.max(insets.bottom, 24) }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+        <View className="flex-1 px-5 pt-4">
           {/* 返回落地页 */}
           <Pressable
             onPress={() => router.replace("/landing")}
             className="flex-row items-center gap-1 mb-6 self-start active:opacity-70"
             hitSlop={12}
           >
-            <Ionicons name="chevron-back" size={18} color="#94A3B8" />
-            <Text className="text-slate-400 text-sm">Contractor GO</Text>
+            <Ionicons name="chevron-back" size={18} color="#8e9aaf" />
+            <Text className="text-ink-secondary text-sm">Contractor GO</Text>
           </Pressable>
 
           {/* 标题 */}
           <View className="mb-6">
-            <Text className="text-[28px] font-bold tracking-tight text-white">{L.title}</Text>
+            <Text className="text-[28px] font-bold tracking-tight text-ink">{L.title}</Text>
           </View>
 
           {/* Tab 切换 */}
-          <View className="flex-row bg-surface-card rounded-xl p-1 mb-6">
+          <View className="flex-row rounded-xl bg-surface-elevated p-1 mb-6">
             {(["phone", "email"] as Tab[]).map((t) => (
               <Pressable
                 key={t}
                 onPress={() => setTab(t)}
-                className={`flex-1 py-2 rounded-lg items-center ${tab === t ? "bg-primary-600" : ""}`}
+                className={`flex-1 py-2 rounded-lg items-center ${tab === t ? "bg-surface-highlight shadow-sm" : ""}`}
               >
-                <Text className={`text-sm font-semibold ${tab === t ? "text-white" : "text-slate-400"}`}>
+                <Text className={`text-sm font-semibold ${tab === t ? "text-primary-400" : "text-ink-secondary"}`}>
                   {t === "phone" ? L.tabPhone : L.tabEmail}
                 </Text>
               </Pressable>
@@ -232,7 +260,7 @@ export default function LoginScreen() {
           {/* 手机号 OTP */}
           {tab === "phone" && (
             <View className="flex-1">
-              <Text className="text-slate-400 text-sm mb-4">{L.phoneSub}</Text>
+              <Text className="text-ink-secondary text-sm mb-4">{L.phoneSub}</Text>
               <PhoneInput
                 countryCode={countryCode}
                 phoneNumber={phoneNumber}
@@ -241,14 +269,20 @@ export default function LoginScreen() {
               />
               <Pressable
                 onPress={() => void handleSendOtp()}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
                 disabled={!canSendOtp}
-                className="mt-5 min-h-touch-xl items-center justify-center rounded-auth-button bg-primary-600 px-5 active:bg-primary-700 disabled:opacity-50"
               >
-                {loading ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Text className="text-base font-semibold text-white">{L.sendCode}</Text>
-                )}
+                <Animated.View
+                  className="mt-5 min-h-touch-xl items-center justify-center rounded-auth-button bg-primary-500 px-5 shadow-button"
+                  style={{ transform: [{ scale: scaleAnim }], opacity: canSendOtp ? 1 : 0.5 }}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text className="text-base font-semibold text-white">{L.sendCode}</Text>
+                  )}
+                </Animated.View>
               </Pressable>
             </View>
           )}
@@ -256,42 +290,48 @@ export default function LoginScreen() {
           {/* 邮箱 + 密码 */}
           {tab === "email" && (
             <View className="flex-1">
-              <Text className="text-slate-400 text-sm mb-4">{L.emailSub}</Text>
+              <Text className="text-ink-secondary text-sm mb-4">{L.emailSub}</Text>
               <View className="gap-3">
                 <View>
-                  <Text className="text-xs font-medium text-slate-400 mb-1">{L.email}</Text>
+                  <Text className="text-xs font-medium text-ink-secondary mb-1">{L.email}</Text>
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     placeholder={L.emailPlaceholder}
-                    placeholderTextColor="#475569"
-                    className="rounded-xl border border-slate-700 bg-surface-card px-4 py-3.5 text-white text-base"
+                    placeholderTextColor="#64748b"
+                    className="rounded-xl border border-surface-border bg-surface-card px-4 py-3.5 text-ink text-base"
                   />
                 </View>
                 <View>
-                  <Text className="text-xs font-medium text-slate-400 mb-1">{L.password}</Text>
+                  <Text className="text-xs font-medium text-ink-secondary mb-1">{L.password}</Text>
                   <TextInput
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
                     placeholder={L.passwordPlaceholder}
-                    placeholderTextColor="#475569"
-                    className="rounded-xl border border-slate-700 bg-surface-card px-4 py-3.5 text-white text-base"
+                    placeholderTextColor="#64748b"
+                    className="rounded-xl border border-surface-border bg-surface-card px-4 py-3.5 text-ink text-base"
                   />
                 </View>
               </View>
               <Pressable
                 onPress={() => void handleEmailAuth()}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
                 disabled={!email || !password || loading}
-                className="mt-5 min-h-touch-xl items-center justify-center rounded-auth-button bg-primary-600 px-5 active:bg-primary-700 disabled:opacity-50"
               >
-                {loading ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Text className="text-base font-semibold text-white">{L.signIn}</Text>
-                )}
+                <Animated.View
+                  className="mt-5 min-h-touch-xl items-center justify-center rounded-auth-button bg-primary-500 px-5 shadow-button"
+                  style={{ transform: [{ scale: scaleAnim }], opacity: email && password && !loading ? 1 : 0.5 }}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text className="text-base font-semibold text-white">{L.signIn}</Text>
+                  )}
+                </Animated.View>
               </Pressable>
             </View>
           )}
@@ -299,30 +339,31 @@ export default function LoginScreen() {
           {/* 社交登录 */}
           <View className="mt-auto pt-6">
             <View className="flex-row items-center gap-3 mb-4">
-              <View className="flex-1 h-px bg-slate-700" />
-              <Text className="text-slate-500 text-xs">{L.orContinueWith}</Text>
-              <View className="flex-1 h-px bg-slate-700" />
+              <View className="flex-1 h-px bg-surface-border" />
+              <Text className="text-ink-tertiary text-xs">{L.orContinueWith}</Text>
+              <View className="flex-1 h-px bg-surface-border" />
             </View>
             <View className="flex-row gap-3">
               <Pressable
                 onPress={() => void handleOAuth("google")}
                 disabled={loading}
-                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-slate-700 bg-surface-card py-3.5 active:bg-surface-elevated disabled:opacity-50"
+                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-surface-border bg-surface-elevated py-3.5 active:bg-surface-highlight disabled:opacity-50"
               >
                 <Ionicons name="logo-google" size={18} color="#EA4335" />
-                <Text className="text-white text-sm font-semibold">Google</Text>
+                <Text className="text-ink text-sm font-semibold">Google</Text>
               </Pressable>
               <Pressable
                 onPress={() => void handleOAuth("github")}
                 disabled={loading}
-                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-slate-700 bg-surface-card py-3.5 active:bg-surface-elevated disabled:opacity-50"
+                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-surface-border bg-surface-elevated py-3.5 active:bg-surface-highlight disabled:opacity-50"
               >
-                <Ionicons name="logo-github" size={18} color="#fff" />
-                <Text className="text-white text-sm font-semibold">GitHub</Text>
+                <Ionicons name="logo-github" size={18} color="#e2e8f0" />
+                <Text className="text-ink text-sm font-semibold">GitHub</Text>
               </Pressable>
             </View>
           </View>
         </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
