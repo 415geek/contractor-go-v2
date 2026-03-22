@@ -6,7 +6,7 @@ import { tokenCache } from "@/lib/clerk-token-cache";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ActivityIndicator, Platform, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -30,20 +30,41 @@ function RootNavigator() {
   const { isSignedIn, isLoaded } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  /** 曾成功登录过本会话；用于区分「OAuth 刚回 /home、Clerk 尚未 hydration」与「用户主动登出」 */
+  const hadSessionRef = useRef(false);
+  const isSignedInRef = useRef(isSignedIn);
+  isSignedInRef.current = isSignedIn;
 
   useEffect(() => {
     if (!isLoaded) return;
-    // 仅处理未登录：非 auth/landing/sso 时跳转登录页
-    if (!isSignedIn) {
-      const inAuthGroup = segments[0] === "(auth)";
-      const inLanding = segments[0] === "landing";
-      const inSSO = segments[0] === "sso-callback";
-      if (!inAuthGroup && !inLanding && !inSSO) {
-        router.replace("/landing");
-      }
+
+    if (isSignedIn) {
+      hadSessionRef.current = true;
+      return;
     }
-    // 已登录用户的跳转由 app/index.tsx 处理（/ -> /(tabs)），此处不再重定向
-  }, [isSignedIn, isLoaded, segments]);
+
+    // 未登录：非 auth / landing / sso-callback 时，默认回落地页
+    const inAuthGroup = segments[0] === "(auth)";
+    const inLanding = segments[0] === "landing";
+    const inSSO = segments[0] === "sso-callback";
+    const inTabs = segments[0] === "(tabs)";
+
+    if (inAuthGroup || inLanding || inSSO) return;
+
+    // Web + 底部 Tab：Google OAuth 完成后会先跳到 /home，短暂出现 isSignedIn=false，若立刻 replace 会误判回 landing
+    const oauthHydrationRace =
+      Platform.OS === "web" && inTabs && !hadSessionRef.current;
+
+    if (oauthHydrationRace) {
+      const id = setTimeout(() => {
+        if (isSignedInRef.current) return;
+        router.replace("/landing");
+      }, 1200);
+      return () => clearTimeout(id);
+    }
+
+    router.replace("/landing");
+  }, [isSignedIn, isLoaded, segments, router]);
 
   if (!isLoaded) {
     return (
