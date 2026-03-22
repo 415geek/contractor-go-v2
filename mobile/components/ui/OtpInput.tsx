@@ -57,9 +57,8 @@ export function OtpInput({
           maxLength={index === 0 ? length : 1}
           textAlign="center"
           placeholder="·"
-          placeholderTextColor="#475569"
-          // Mobile-friendly OTP input size
-          className="h-10 flex-1 rounded-auth-input border border-surface-border bg-surface-card text-base font-semibold text-white"
+          placeholderTextColor="#C7C7CC"
+          className="h-12 flex-1 rounded-auth-input border-2 border-slate-200 bg-white text-lg font-semibold text-ink"
           selectTextOnFocus
         />
       ))}

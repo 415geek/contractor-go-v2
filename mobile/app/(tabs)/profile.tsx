@@ -24,8 +24,8 @@ type SettingSection = {
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-1 items-center">
-      <Text className="text-xl font-bold text-white">{value}</Text>
-      <Text className="text-xs text-slate-400 mt-0.5">{label}</Text>
+      <Text className="text-xl font-bold text-ink">{value}</Text>
+      <Text className="text-xs text-ink-secondary mt-0.5">{label}</Text>
     </View>
   );
 }
@@ -34,21 +34,21 @@ function SettingItem({ row }: { row: SettingRow }) {
   return (
     <Pressable
       onPress={row.onPress}
-      className={`flex-row items-center px-4 py-3.5 active:bg-surface-elevated ${row.danger ? "" : ""}`}
+      className={`flex-row items-center px-4 py-3.5 active:bg-slate-50 ${row.danger ? "" : ""}`}
     >
       <View className={`w-8 h-8 rounded-lg ${row.iconBg} items-center justify-center mr-3`}>
         <Ionicons name={row.icon as any} size={16} color={row.iconColor} />
       </View>
-      <Text className={`flex-1 text-base ${row.danger ? "text-error-500" : "text-white"}`}>
+      <Text className={`flex-1 text-base ${row.danger ? "text-error-500" : "text-ink"}`}>
         {row.label}
       </Text>
       {row.value && (
-        <Text className="text-slate-500 text-sm mr-2">{row.value}</Text>
+        <Text className="text-ink-tertiary text-sm mr-2">{row.value}</Text>
       )}
       <Ionicons
         name="chevron-forward"
         size={16}
-        color={row.danger ? "#EF4444" : "#475569"}
+        color={row.danger ? "#EF4444" : "#C7C7CC"}
       />
     </Pressable>
   );
@@ -157,51 +157,51 @@ export default function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* 标题 */}
         <View className="px-4 pt-2 pb-3">
-          <Text className="text-2xl font-bold text-white">我的</Text>
+          <Text className="text-2xl font-bold text-ink">我的</Text>
         </View>
 
         {/* 用户信息卡片 */}
-        <View className="mx-4 mb-4 rounded-xl border border-slate-700/60 bg-surface-card p-5">
+        <View className="mx-4 mb-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
           <View className="flex-row items-center gap-4">
             {/* 头像 */}
-            <View className="w-16 h-16 rounded-full bg-primary-700 items-center justify-center">
+            <View className="w-16 h-16 rounded-full bg-primary-500 items-center justify-center">
               <Text className="text-white text-2xl font-bold">
                 {phone.slice(-2, -1) || "?"}
               </Text>
             </View>
             {/* 信息 */}
             <View className="flex-1">
-              <Text className="text-white text-xl font-bold">您好！</Text>
-              <Text className="text-slate-400 text-sm mt-0.5">{displayPhone}</Text>
+              <Text className="text-ink text-xl font-bold">您好！</Text>
+              <Text className="text-ink-secondary text-sm mt-0.5">{displayPhone}</Text>
             </View>
             <Pressable
-              className="w-9 h-9 rounded-full bg-surface-elevated items-center justify-center active:opacity-70"
+              className="w-9 h-9 rounded-full bg-slate-100 items-center justify-center active:opacity-70"
               accessibilityLabel="编辑资料"
             >
-              <Ionicons name="create-outline" size={18} color="#94A3B8" />
+              <Ionicons name="create-outline" size={18} color="#8E8E93" />
             </Pressable>
           </View>
 
           {/* 统计数据 */}
-          <View className="mt-4 pt-4 border-t border-slate-700/60 flex-row">
+          <View className="mt-4 pt-4 border-t border-slate-100 flex-row">
             <StatCard label="项目数" value="0" />
-            <View className="w-px bg-slate-700" />
+            <View className="w-px bg-slate-200" />
             <StatCard label="总金额" value="$0" />
-            <View className="w-px bg-slate-700" />
+            <View className="w-px bg-slate-200" />
             <StatCard label="好评率" value="—" />
           </View>
         </View>
 
         {/* 订阅状态卡片 */}
         <Pressable
-          className="mx-4 mb-4 rounded-xl border border-accent-500/40 bg-accent-500/10 p-4 flex-row items-center gap-3 active:bg-accent-500/20"
+          className="mx-4 mb-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 flex-row items-center gap-3 active:bg-orange-100"
         >
-          <View className="w-10 h-10 rounded-xl bg-accent-500/20 items-center justify-center">
+          <View className="w-10 h-10 rounded-xl bg-orange-100 items-center justify-center">
             <Ionicons name="star" size={20} color="#F97316" />
           </View>
           <View className="flex-1">
-            <Text className="text-white font-semibold">免费版</Text>
-            <Text className="text-slate-400 text-sm mt-0.5">升级 Pro，解锁全部功能</Text>
+            <Text className="text-ink font-semibold">免费版</Text>
+            <Text className="text-ink-secondary text-sm mt-0.5">升级 Pro，解锁全部功能</Text>
           </View>
           <View className="bg-accent-500 rounded-lg px-3 py-1.5">
             <Text className="text-white text-xs font-bold">升级</Text>
@@ -211,13 +211,13 @@ export default function ProfileScreen() {
         {/* 设置列表 */}
         {SECTIONS.map((section, sIdx) => (
           <View key={sIdx} className="mb-3">
-            <Text className="px-4 mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <Text className="px-4 mb-1 text-xs font-semibold uppercase tracking-wider text-ink-tertiary">
               {section.title}
             </Text>
-            <View className="mx-4 rounded-xl border border-slate-700/60 bg-surface-card overflow-hidden">
+            <View className="mx-4 rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-card">
               {section.rows.map((row, rIdx) => (
                 <View key={rIdx}>
-                  {rIdx > 0 && <View className="h-px bg-slate-700/60 mx-4" />}
+                  {rIdx > 0 && <View className="h-px bg-slate-100 mx-4" />}
                   <SettingItem row={row} />
                 </View>
               ))}

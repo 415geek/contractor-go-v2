@@ -1,1 +1,5 @@
-export { default } from "../tools/house-estimate";
+import { Redirect } from "expo-router";
+
+export default function WorkbenchHouseEstimateRedirect() {
+  return <Redirect href="/tools/house-estimate" />;
+}

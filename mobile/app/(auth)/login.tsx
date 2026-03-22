@@ -182,7 +182,8 @@ export default function LoginScreen() {
           await signIn!.authenticateWithRedirect({
             strategy,
             redirectUrl: `${window.location.origin}/sso-callback`,
-            redirectUrlComplete: `${window.location.origin}/`,
+            // 登录完成后直达工作台；需在 Clerk Dashboard → Redirect URLs 允许 `https://你的域名/home`
+            redirectUrlComplete: `${window.location.origin}/home`,
           });
           // Full page navigates away — no further code executes here.
           return;
@@ -229,24 +230,24 @@ export default function LoginScreen() {
             className="flex-row items-center gap-1 mb-6 self-start active:opacity-70"
             hitSlop={12}
           >
-            <Ionicons name="chevron-back" size={18} color="#94A3B8" />
-            <Text className="text-slate-400 text-sm">Contractor GO</Text>
+            <Ionicons name="chevron-back" size={18} color="#8E8E93" />
+            <Text className="text-ink-secondary text-sm">Contractor GO</Text>
           </Pressable>
 
           {/* 标题 */}
           <View className="mb-6">
-            <Text className="text-[28px] font-bold tracking-tight text-white">{L.title}</Text>
+            <Text className="text-[28px] font-bold tracking-tight text-ink">{L.title}</Text>
           </View>
 
           {/* Tab 切换 */}
-          <View className="flex-row bg-surface-card rounded-xl p-1 mb-6">
+          <View className="flex-row bg-slate-100 rounded-xl p-1 mb-6">
             {(["phone", "email"] as Tab[]).map((t) => (
               <Pressable
                 key={t}
                 onPress={() => setTab(t)}
-                className={`flex-1 py-2 rounded-lg items-center ${tab === t ? "bg-primary-600" : ""}`}
+                className={`flex-1 py-2 rounded-lg items-center ${tab === t ? "bg-white shadow-sm" : ""}`}
               >
-                <Text className={`text-sm font-semibold ${tab === t ? "text-white" : "text-slate-400"}`}>
+                <Text className={`text-sm font-semibold ${tab === t ? "text-primary-600" : "text-ink-secondary"}`}>
                   {t === "phone" ? L.tabPhone : L.tabEmail}
                 </Text>
               </Pressable>
@@ -256,7 +257,7 @@ export default function LoginScreen() {
           {/* 手机号 OTP */}
           {tab === "phone" && (
             <View className="flex-1">
-              <Text className="text-slate-400 text-sm mb-4">{L.phoneSub}</Text>
+              <Text className="text-ink-secondary text-sm mb-4">{L.phoneSub}</Text>
               <PhoneInput
                 countryCode={countryCode}
                 phoneNumber={phoneNumber}
@@ -270,7 +271,7 @@ export default function LoginScreen() {
                 disabled={!canSendOtp}
               >
                 <Animated.View
-                  className="mt-5 min-h-touch-xl items-center justify-center rounded-auth-button bg-primary-600 px-5"
+                  className="mt-5 min-h-touch-xl items-center justify-center rounded-auth-button bg-primary-500 px-5 shadow-button"
                   style={{ transform: [{ scale: scaleAnim }], opacity: canSendOtp ? 1 : 0.5 }}
                 >
                   {loading ? (
@@ -286,29 +287,29 @@ export default function LoginScreen() {
           {/* 邮箱 + 密码 */}
           {tab === "email" && (
             <View className="flex-1">
-              <Text className="text-slate-400 text-sm mb-4">{L.emailSub}</Text>
+              <Text className="text-ink-secondary text-sm mb-4">{L.emailSub}</Text>
               <View className="gap-3">
                 <View>
-                  <Text className="text-xs font-medium text-slate-400 mb-1">{L.email}</Text>
+                  <Text className="text-xs font-medium text-ink-secondary mb-1">{L.email}</Text>
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     placeholder={L.emailPlaceholder}
-                    placeholderTextColor="#475569"
-                    className="rounded-xl border border-slate-700 bg-surface-card px-4 py-3.5 text-white text-base"
+                    placeholderTextColor="#C7C7CC"
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-ink text-base"
                   />
                 </View>
                 <View>
-                  <Text className="text-xs font-medium text-slate-400 mb-1">{L.password}</Text>
+                  <Text className="text-xs font-medium text-ink-secondary mb-1">{L.password}</Text>
                   <TextInput
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
                     placeholder={L.passwordPlaceholder}
-                    placeholderTextColor="#475569"
-                    className="rounded-xl border border-slate-700 bg-surface-card px-4 py-3.5 text-white text-base"
+                    placeholderTextColor="#C7C7CC"
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-ink text-base"
                   />
                 </View>
               </View>
@@ -319,7 +320,7 @@ export default function LoginScreen() {
                 disabled={!email || !password || loading}
               >
                 <Animated.View
-                  className="mt-5 min-h-touch-xl items-center justify-center rounded-auth-button bg-primary-600 px-5"
+                  className="mt-5 min-h-touch-xl items-center justify-center rounded-auth-button bg-primary-500 px-5 shadow-button"
                   style={{ transform: [{ scale: scaleAnim }], opacity: email && password && !loading ? 1 : 0.5 }}
                 >
                   {loading ? (
@@ -335,26 +336,26 @@ export default function LoginScreen() {
           {/* 社交登录 */}
           <View className="mt-auto pt-6">
             <View className="flex-row items-center gap-3 mb-4">
-              <View className="flex-1 h-px bg-slate-700" />
-              <Text className="text-slate-500 text-xs">{L.orContinueWith}</Text>
-              <View className="flex-1 h-px bg-slate-700" />
+              <View className="flex-1 h-px bg-slate-200" />
+              <Text className="text-ink-tertiary text-xs">{L.orContinueWith}</Text>
+              <View className="flex-1 h-px bg-slate-200" />
             </View>
             <View className="flex-row gap-3">
               <Pressable
                 onPress={() => void handleOAuth("google")}
                 disabled={loading}
-                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-slate-700 bg-surface-card py-3.5 active:bg-surface-elevated disabled:opacity-50"
+                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3.5 active:bg-slate-50 disabled:opacity-50"
               >
                 <Ionicons name="logo-google" size={18} color="#EA4335" />
-                <Text className="text-white text-sm font-semibold">Google</Text>
+                <Text className="text-ink text-sm font-semibold">Google</Text>
               </Pressable>
               <Pressable
                 onPress={() => void handleOAuth("github")}
                 disabled={loading}
-                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-slate-700 bg-surface-card py-3.5 active:bg-surface-elevated disabled:opacity-50"
+                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3.5 active:bg-slate-50 disabled:opacity-50"
               >
-                <Ionicons name="logo-github" size={18} color="#fff" />
-                <Text className="text-white text-sm font-semibold">GitHub</Text>
+                <Ionicons name="logo-github" size={18} color="#1C1C1E" />
+                <Text className="text-ink text-sm font-semibold">GitHub</Text>
               </Pressable>
             </View>
           </View>

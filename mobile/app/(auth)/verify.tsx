@@ -148,10 +148,10 @@ export default function VerifyScreen() {
           </Pressable>
 
           <View className="mt-8">
-            <Text className="text-2xl font-bold tracking-tight text-white">
+            <Text className="text-2xl font-bold tracking-tight text-ink">
               输入验证码
             </Text>
-            <Text className="mt-2 text-sm leading-5 text-slate-400">
+            <Text className="mt-2 text-sm leading-5 text-ink-secondary">
               {isPhone
                 ? `验证码已发送至 ${masked}，请查收短信后输入 6 位数字`
                 : `验证码已发送至 ${masked}，请查收邮件后输入 6 位数字`}
@@ -172,7 +172,7 @@ export default function VerifyScreen() {
               disabled={!canVerify}
             >
               <Animated.View
-                className="mt-6 min-h-touch items-center justify-center rounded-auth-button bg-primary-500 px-5 py-3.5"
+                className="mt-6 min-h-touch items-center justify-center rounded-auth-button bg-primary-500 px-5 py-3.5 shadow-button"
                 style={{ transform: [{ scale: scaleAnim }], opacity: canVerify ? 1 : 0.5 }}
               >
                 {loading ? (
@@ -185,15 +185,15 @@ export default function VerifyScreen() {
           </View>
 
           <View className="mt-auto gap-3 pt-8">
-            <Text className="text-center text-sm text-slate-400">
+            <Text className="text-center text-sm text-ink-secondary">
               {countdown > 0 ? `${countdown}s 后可重新发送` : "没收到验证码？"}
             </Text>
             <Pressable
               onPress={() => void handleResend()}
               disabled={countdown > 0 || loading}
-              className="min-h-touch items-center justify-center rounded-auth-button border border-slate-700 bg-surface-card px-5 py-3.5 active:bg-surface-elevated disabled:opacity-50"
+              className="min-h-touch items-center justify-center rounded-auth-button border border-slate-200 bg-white px-5 py-3.5 active:bg-slate-50 disabled:opacity-50"
             >
-              <Text className="text-base font-semibold text-white">重新发送验证码</Text>
+              <Text className="text-base font-semibold text-ink">重新发送验证码</Text>
             </Pressable>
           </View>
         </View>

@@ -10,18 +10,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // 主色：建筑蓝 — 专业、可靠、天空
+        // 主色：iOS 系统蓝（Proma / Uber 级主操作色）
         primary: {
-          50: "#EFF6FF",
-          100: "#DBEAFE",
-          200: "#BFDBFE",
-          300: "#93C5FD",
-          400: "#60A5FA",
-          500: "#2563EB",
-          600: "#1D4ED8",
-          700: "#1E40AF",
-          800: "#1E3A8A",
-          900: "#172554",
+          50: "#E8F1FF",
+          100: "#C7E0FF",
+          200: "#A3CFFF",
+          300: "#7AB8FF",
+          400: "#4DA3FF",
+          500: "#007AFF",
+          600: "#0062CC",
+          700: "#004C99",
+          800: "#003D7A",
+          900: "#002952",
         },
         // 辅助色：工地橙 — 能量、安全、活力
         accent: {
@@ -59,18 +59,23 @@ module.exports = {
           500: "#EF4444",
           600: "#DC2626",
         },
-        // 表面层级 (深色模式，工地强光下更易读)
+        // 表面：浅色优先（Apple 系统灰 + 白卡）
         surface: {
-          app: "#0F172A",
-          card: "#1E293B",
-          elevated: "#334155",
-          border: "#475569",
-          borderMuted: "#334155",
+          app: "#F5F5F7",
+          card: "#FFFFFF",
+          elevated: "#FAFAFA",
+          border: "#E5E5EA",
+          borderMuted: "#D1D1D6",
+        },
+        ink: {
+          DEFAULT: "#1C1C1E",
+          secondary: "#636366",
+          tertiary: "#8E8E93",
         },
         // 品牌色 (向后兼容)
         brand: {
-          100: "#DBEAFE",
-          500: "#2563EB",
+          100: "#E8F1FF",
+          500: "#007AFF",
         },
         // 改进文字对比度
         slate: {
@@ -110,12 +115,12 @@ module.exports = {
         30: "120px",
       },
       boxShadow: {
-        "card": "0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08)",
-        "card-lg": "0 4px 16px rgba(0, 0, 0, 0.16), 0 2px 4px rgba(0, 0, 0, 0.12)",
-        "elevated": "0 8px 32px rgba(0, 0, 0, 0.24), 0 4px 8px rgba(0, 0, 0, 0.12)",
-        "button": "0 2px 8px rgba(37, 99, 235, 0.3)",
-        "button-lg": "0 4px 16px rgba(37, 99, 235, 0.4)",
-        "inner-light": "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+        card: "0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04)",
+        "card-lg": "0 4px 14px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04)",
+        elevated: "0 8px 24px rgba(0, 0, 0, 0.1)",
+        button: "0 4px 14px rgba(0, 122, 255, 0.28)",
+        "button-lg": "0 6px 20px rgba(0, 122, 255, 0.32)",
+        "inner-light": "inset 0 1px 0 rgba(255, 255, 255, 0.8)",
       },
       animation: {
         "fade-in": "fadeIn 0.3s ease-out",

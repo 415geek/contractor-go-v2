@@ -1,6 +1,8 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Platform, ScrollView, Text, View } from "react-native";
 
+import { theme } from "@/lib/theme";
+
 interface Props {
   children: ReactNode;
 }
@@ -30,7 +32,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <View
           style={{
             flex: 1,
-            backgroundColor: "#0F172A",
+            backgroundColor: theme.bg,
             padding: 24,
             justifyContent: "center",
             alignItems: "center",
@@ -42,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
           >
             <Text
               style={{
-                color: "#EF4444",
+                color: theme.danger,
                 fontSize: 18,
                 fontWeight: "600",
                 marginBottom: 12,
@@ -52,7 +54,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </Text>
             <Text
               style={{
-                color: "#94A3B8",
+                color: theme.inkSecondary,
                 fontSize: 14,
                 lineHeight: 20,
                 marginBottom: 16,
@@ -62,13 +64,31 @@ export class ErrorBoundary extends Component<Props, State> {
             </Text>
             <Text
               style={{
-                color: "#64748B",
+                color: theme.inkTertiary,
                 fontSize: 12,
                 lineHeight: 18,
               }}
             >
-              请检查：1) Clerk 控制台是否已添加 www.contractorgo.io 域名；
-              2) 生产环境是否使用 pk_live_ 密钥；3) 控制台 (F12) 查看详细错误。
+              {(() => {
+                const m = msg.toLowerCase();
+                if (m.includes("expo_public_supabase")) {
+                  return (
+                    "请检查：\n" +
+                    "1) Vercel → contractorgo-web → Settings → Environment Variables：为 Production 添加 " +
+                    "EXPO_PUBLIC_SUPABASE_URL、EXPO_PUBLIC_SUPABASE_ANON_KEY（与 mobile/.env.example 一致即可），保存后 Redeploy；\n" +
+                    "2) 本地开发：在 mobile/.env 配置上述两项后重启 expo；\n" +
+                    "3) F12 控制台查看 Network / 其它报错。"
+                  );
+                }
+                if (m.includes("clerk") || m.includes("publishable")) {
+                  return (
+                    "请检查：1) Clerk 控制台是否已添加 www.contractorgo.io；2) 生产是否使用 pk_live_；3) F12 查看详细错误。"
+                  );
+                }
+                return (
+                  "请检查：1) Supabase / Clerk 等 EXPO_PUBLIC_* 是否已在 Vercel 构建环境配置并重新部署；2) F12 查看详细错误。"
+                );
+              })()}
             </Text>
           </ScrollView>
         </View>

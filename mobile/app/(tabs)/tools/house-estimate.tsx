@@ -1,59 +1,78 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
 import { useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  ActivityIndicator,
-  Image,
-  Alert,
-} from "react-native";
+import { View, Text, ScrollView, Pressable, ActivityIndicator, Image, Alert } from "react-native";
 
-import { useUser } from "@clerk/clerk-expo";
+import { useAuth, useUser } from "@clerk/clerk-expo";
+
+import { ToolScreenHeader, useToolScrollBottomPadding } from "@/components/tools/ToolScreenChrome";
 import { EstimateSegment } from "@/components/tools/EstimateSegment";
 import { useHouseEstimate } from "@/hooks/useHouseEstimate";
-import { supabase } from "@/lib/supabase";
+import { uploadToolImageViaEdge } from "@/lib/api/upload-tool-image";
+import { imageUriToBase64 } from "@/lib/image-base64";
+import { launchImageLibraryWeb, shouldUseWebFilePicker } from "@/lib/launch-image-library-web";
 
-async function pickAndUploadImage(userId: string): Promise<string | null> {
-  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (status !== "granted") {
-    Alert.alert("需要相册权限");
-    return null;
+async function pickAndUploadImage(
+  getToken: () => Promise<string | null>,
+): Promise<{ url: string | null; error?: string }> {
+  let result: ImagePicker.ImagePickerResult;
+  if (shouldUseWebFilePicker()) {
+    result = await launchImageLibraryWeb();
+  } else {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      return { url: null, error: "需要相册权限" };
+    }
+    result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      quality: 0.85,
+    });
   }
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ["images"],
-    allowsEditing: true,
-    quality: 0.8,
-  });
-  if (result.canceled || !result.assets?.[0]?.uri) return null;
+  if (result.canceled || !result.assets?.[0]?.uri) return { url: null };
   const uri = result.assets[0].uri;
+  const asset = result.assets[0];
+  const ext = uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
+  const safeExt = ext.length > 5 ? "jpg" : ext;
+  const fileName = `estimate.${safeExt}`;
+  const mime =
+    asset.mimeType && asset.mimeType.startsWith("image/")
+      ? asset.mimeType
+      : safeExt === "png"
+        ? "image/png"
+        : "image/jpeg";
   try {
-    const res = await fetch(uri);
-    const blob = await res.blob();
-    const fileName = `${Date.now()}.jpg`;
-    const path = `estimates/${userId}/${fileName}`;
-    const { data: up, error } = await supabase.storage.from("material-images").upload(path, blob, { upsert: true });
-    if (error) throw error;
-    const { data: urlData } = supabase.storage.from("material-images").getPublicUrl(up.path);
-    return urlData?.publicUrl ?? null;
-  } catch {
-    return null;
+    const token = await getToken();
+    if (!token) return { url: null, error: "请先登录" };
+    const base64 = await imageUriToBase64(uri);
+    const { publicUrl } = await uploadToolImageViaEdge(token, {
+      base64,
+      filename: fileName,
+      kind: "estimate",
+      contentType: mime,
+    });
+    return { url: publicUrl };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { url: null, error: msg || "上传失败" };
   }
 }
 
 export default function HouseEstimateScreen() {
-  const router = useRouter();
+  const scrollPad = useToolScrollBottomPadding();
   const { user } = useUser();
+  const { getToken } = useAuth();
   const { estimateHouse, isEstimating, result, error } = useHouseEstimate();
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   const handleAddImage = async () => {
-    if (!user?.id) return;
-    const url = await pickAndUploadImage(user.id);
+    if (!user?.id) {
+      Alert.alert("提示", "请先登录后再上传图片");
+      return;
+    }
+    const { url, error: upErr } = await pickAndUploadImage(getToken);
     if (url) setImageUrls((prev) => [...prev, url].slice(0, 5));
+    else if (upErr) Alert.alert("上传失败", upErr);
   };
 
   const handleAnalyze = async () => {
@@ -68,28 +87,26 @@ export default function HouseEstimateScreen() {
     }
   };
 
-  const segments = (result?.segments ?? []) as Array<{
+  const segments = (result?.segments ?? []) as {
     id: string;
     material_type?: string;
     material_name?: string;
     quantity?: { value: number; unit: string };
     price_per_unit?: { min: number; max: number };
     total_price?: { min: number; max: number };
-  }>;
-  const total = result?.total_estimate as { materials_only?: { min: number; max: number }; with_labor?: { min: number; max: number } } | undefined;
+  }[];
+  const total = result?.total_estimate as
+    | { materials_only?: { min: number; max: number }; with_labor?: { min: number; max: number } }
+    | undefined;
 
   return (
     <View className="flex-1 bg-slate-950">
-      <View className="border-b border-slate-800 px-4 pt-12 pb-4">
-        <View className="flex-row items-center justify-between">
-          <Pressable onPress={() => router.back()} className="p-1">
-            <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
-          </Pressable>
-          <Text className="text-lg font-semibold text-white">房屋估价</Text>
-          <View className="w-8" />
-        </View>
-      </View>
-      <ScrollView className="flex-1" contentContainerClassName="px-4 py-6 pb-8">
+      <ToolScreenHeader title="房屋估价" />
+      <ScrollView
+        className="flex-1"
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: scrollPad }}
+      >
         <View className="mb-4">
           <Text className="mb-2 text-sm font-medium text-slate-400">上传装修照片</Text>
           <View className="flex-row flex-wrap gap-2">

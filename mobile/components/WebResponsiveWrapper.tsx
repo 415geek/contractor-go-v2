@@ -1,6 +1,8 @@
 import { Platform, StyleSheet, View } from "react-native";
 import { useEffect, useState } from "react";
 
+import { theme } from "@/lib/theme";
+
 export function WebResponsiveWrapper({ children }: { children: React.ReactNode }) {
   const [windowHeight, setWindowHeight] = useState<number | string>("100%");
 
@@ -25,11 +27,14 @@ export function WebResponsiveWrapper({ children }: { children: React.ReactNode }
     return <View style={styles.mobile}>{children}</View>;
   }
 
+  const minH = typeof windowHeight === "number" ? windowHeight : undefined;
+
   return (
     <View
       style={[
         styles.web,
-        { minHeight: windowHeight },
+        minH != null && { minHeight: minH },
+        { backgroundColor: theme.bg },
       ]}
     >
       {children}
@@ -38,7 +43,7 @@ export function WebResponsiveWrapper({ children }: { children: React.ReactNode }
 }
 
 const styles = StyleSheet.create({
-  mobile: { flex: 1 },
+  mobile: { flex: 1, backgroundColor: theme.bg },
   web: {
     flex: 1,
     maxWidth: 430,

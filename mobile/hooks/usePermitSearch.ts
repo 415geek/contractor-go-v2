@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-expo";
 
-import { supabase } from "@/lib/supabase";
+import { searchPermitViaEdge, type PermitSearchApiResult } from "@/lib/api/permit-search";
 
 export type PropertyInfo = {
   lot_size_sqft?: number;
@@ -28,7 +28,18 @@ export type PermitSearchResult = {
   key_insights: string[];
 };
 
-const SUPPORTED_CITIES = ["San Francisco", "Oakland", "San Jose"];
+/** 与 Edge `search-permit` / `permit-open-data.ts` 一致（开放 API 可接入的城市） */
+const SUPPORTED_CITIES = ["San Francisco", "San Jose"];
+
+function normalizeResult(data: PermitSearchApiResult): PermitSearchResult {
+  return {
+    address: data.address,
+    city: data.city,
+    property_info: (data.property_info ?? null) as PropertyInfo | null,
+    permit_history: (data.permit_history ?? []) as PermitItem[],
+    key_insights: Array.isArray(data.key_insights) ? data.key_insights : [],
+  };
+}
 
 export function usePermitSearch() {
   const [isSearching, setIsSearching] = useState(false);
@@ -46,22 +57,8 @@ export function usePermitSearch() {
     try {
       const token = await getToken();
       if (!token) throw new Error("Not authenticated");
-      const { data, error: fnError } = await supabase.functions.invoke<{
-        data?: PermitSearchResult & { city?: string };
-        error?: string;
-        supported_cities?: string[];
-      }>("search-permit", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: { address: trimmed },
-      });
-      if (data?.error === "unsupported_city") {
-        setError(new Error(`该地址所在城市暂不支持，支持城市: ${(data.supported_cities ?? SUPPORTED_CITIES).join(", ")}`));
-        return;
-      }
-      if (fnError) throw fnError;
-      if (data?.error) throw new Error(String(data.error));
-      if (data?.data) setResult(data.data);
+      const data = await searchPermitViaEdge(token, trimmed);
+      setResult(normalizeResult(data));
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
       setError(err);

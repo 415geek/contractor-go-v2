@@ -1,10 +1,5 @@
+import { openAiChatCompletion } from "../_shared/openai-chat.ts";
 import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
-
-function getEnv(name: string): string {
-  const v = Deno.env.get(name);
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
-}
 
 Deno.serve(async (req) => {
   const opts = handleOptionsRequest(req);
@@ -24,34 +19,25 @@ Deno.serve(async (req) => {
       return jsonResponse({ data: null, error: "invalid_body", message: "text required" }, 400);
     }
 
-    const key = getEnv("ANTHROPIC_API_KEY");
-    const prompt = `Translate from ${source} to ${target}. Construction context. Output translation only: ${text}`;
+    const prompt =
+      `Translate from ${source} to ${target}. Construction / trades context.\n` +
+      `Output only the translation text, no quotes or explanations:\n\n${text}`;
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-3-5-haiku-20241022",
-        max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
-      }),
+    const ai = await openAiChatCompletion({
+      messages: [{ role: "user", content: prompt }],
+      maxTokens: 1024,
+      responseFormatJsonObject: false,
     });
 
-    const json = await res.json();
-    const content = json.content?.[0]?.text?.trim() ?? "";
-    if (!content) {
+    if (!ai.ok) {
       return jsonResponse(
-        { data: null, error: "translate_failed", message: json.error?.message ?? "No translation" },
-        500,
+        { data: null, error: "translate_failed", message: ai.message },
+        502,
       );
     }
 
     return jsonResponse({
-      data: { translated_text: content },
+      data: { translated_text: ai.content },
       error: null,
       message: "ok",
     });

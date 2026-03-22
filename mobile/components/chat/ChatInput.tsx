@@ -39,11 +39,11 @@ export function ChatInput({ onSend, disabled, sourceLang = "zh-CN", targetLang =
   };
 
   return (
-    <View className="border-t border-gray-800 bg-gray-900 p-3">
+    <View className="border-t border-slate-200 bg-white p-3">
       {text.trim() && (
         <View className="mb-2 px-2">
-          <Text className="text-gray-400 text-xs">翻译预览</Text>
-          <Text className="text-white text-sm">{isTranslating ? "..." : translatedText || "-"}</Text>
+          <Text className="text-ink-tertiary text-xs">翻译预览</Text>
+          <Text className="text-ink text-sm">{isTranslating ? "..." : translatedText || "-"}</Text>
         </View>
       )}
       <View className="flex-row items-end gap-2">
@@ -57,16 +57,16 @@ export function ChatInput({ onSend, disabled, sourceLang = "zh-CN", targetLang =
           value={text}
           onChangeText={setText}
           placeholder="输入消息..."
-          placeholderTextColor="#6B7280"
+          placeholderTextColor="#C7C7CC"
           multiline
           maxLength={500}
           editable={!disabled}
-          className="flex-1 bg-gray-800 text-white rounded-xl px-4 py-3 max-h-24"
+          className="flex-1 bg-slate-100 text-ink rounded-xl px-4 py-3 max-h-24 border border-slate-200"
         />
         <Pressable
           onPress={handleSend}
           disabled={disabled || !text.trim()}
-          className="p-2 rounded-full bg-blue-600 disabled:opacity-50"
+          className="p-2 rounded-full bg-primary-500 disabled:opacity-50"
         >
           <Ionicons name="send" size={20} color="white" />
         </Pressable>

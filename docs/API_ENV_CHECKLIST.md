@@ -11,10 +11,11 @@
 | `SUPABASE_URL` | 自动注入 | ✓ |
 | `SUPABASE_ANON_KEY` | 自动注入 | ✓ |
 | `SUPABASE_SERVICE_ROLE_KEY` | 自动注入 | ✓ |
-| `ANTHROPIC_API_KEY` | 翻译、房屋估价、材料搜索、Permit 解析、项目解析、生成计划 | ✓ |
-| `OPENAI_API_KEY` | 项目语音转文字（Whisper） | ✓（若用语音输入） |
+| `OPENAI_API_KEY` | Chat Completions（项目解析、生成计划、翻译、材料/房屋视觉、Permit 解析）+ Whisper（项目语音） | ✓（AI/语音相关功能） |
+| `OPENAI_CHAT_MODEL` | 覆盖默认聊天模型（默认 `gpt-4o-mini`）；也可设 `OPENAI_MODEL` | 可选 |
 | `VOIPMS_USERNAME` | Voip.ms 搜索/购买号码、发短信 | ✓（若用虚拟号码） |
 | `VOIPMS_PASSWORD` | Voip.ms API 密码 | ✓（若用虚拟号码） |
+| `SOCRATA_APP_TOKEN` | Permit 查询走 SF DataSF（Socrata）时可选，提高 API 限额 | 可选 |
 
 ## 用户端 Web（Vercel 环境变量）
 
@@ -43,16 +44,20 @@
 | 消息/对话列表 | get-conversations, get-messages, create-conversation | - |
 | 发消息 | send-message | VOIPMS_*, translate |
 | 虚拟号码列表 | voip-my-numbers | - |
-| 搜索号码 | voip-available-numbers | VOIPMS_* |
+| 搜索号码 | voip-available-numbers | VOIPMS_*；支持 `state`（整州）、`area_code`（任意美国 NPA）、`state`+`ratecenter` |
 | 购买号码 | voip-purchase-number | VOIPMS_* |
 | 项目 CRUD | projects | - |
-| 项目解析（语音/文字） | parse-project | ANTHROPIC_API_KEY, OPENAI_API_KEY |
-| 生成计划 | generate-plan | ANTHROPIC_API_KEY |
-| 房屋估价 | estimate-house | ANTHROPIC_API_KEY |
-| 材料搜索 | search-material | ANTHROPIC_API_KEY |
-| Permit 查询 | search-permit | ANTHROPIC_API_KEY, Nova ACT API |
-| 翻译 | translate | ANTHROPIC_API_KEY |
+| 项目解析（语音/文字） | parse-project | `OPENAI_API_KEY`（文字/结构化用 Chat；语音另需 Whisper 同 key） |
+| 生成计划 | generate-plan | `OPENAI_API_KEY` |
+| 房屋估价 | estimate-house | `OPENAI_API_KEY`（视觉） |
+| 材料搜索 | search-material | `OPENAI_API_KEY`（视觉） |
+| 工具图片上传 | upload-tool-image | Storage `material-images` bucket；沿用自动注入的 Service Role |
+| Permit 查询 | search-permit | `OPENAI_API_KEY`；可选 `SOCRATA_APP_TOKEN`（SF DataSF 限额） |
+| 翻译 | translate | `OPENAI_API_KEY` |
 
 ## 存储上传说明
 
-材料比价、房屋估价的图片上传使用 Supabase Storage 的 `material-images` bucket。需确保该 bucket 的 RLS 策略允许上传。若使用 Clerk 认证，Supabase Storage 可能无法验证 Clerk JWT，建议将 `material-images` 配置为允许匿名上传（或通过 Edge Function 代理上传）。
+材料比价、房屋估价的图片经 Edge Function **`upload-tool-image`** 使用 **Service Role** 写入 Storage（客户端带 **Clerk JWT + apikey**），避免「仅用 anon + Clerk」时 Storage RLS 拒绝上传。
+
+- 需在 Supabase 创建 **`material-images`** bucket；建议 **Public bucket**（或至少对匿名读开放），以便 AI 视觉接口通过公网 URL 拉取图片。
+- 部署：`supabase functions deploy upload-tool-image`

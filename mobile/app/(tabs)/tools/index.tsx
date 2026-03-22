@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 import { pushPath } from "@/lib/web-navigation";
 
@@ -17,13 +18,23 @@ type Tool = {
 
 const TOOLS: Tool[] = [
   {
+    id: "ar-measure",
+    name: "AR 测量",
+    description: "相机取点测距\n气泡水平仪",
+    icon: "scan-circle-outline",
+    color: "#34D399",
+    iconBg: "bg-emerald-500/15",
+    route: "/tools/ar-measure",
+    badge: "free",
+  },
+  {
     id: "material-price",
     name: "材料比价",
     description: "拍照识别\n全网比价",
     icon: "pricetag-outline",
     color: "#22C55E",
     iconBg: "bg-success-500/15",
-    route: "/workbench/material-price",
+    route: "/tools/material-price",
     badge: "free",
   },
   {
@@ -33,17 +44,17 @@ const TOOLS: Tool[] = [
     icon: "home-outline",
     color: "#F97316",
     iconBg: "bg-accent-500/15",
-    route: "/workbench/house-estimate",
+    route: "/tools/house-estimate",
     badge: "pro",
   },
   {
     id: "permit",
-    name: "Permit查询",
-    description: "湾区许可证\n公开数据",
-    icon: "document-text-outline",
+    name: "物业信息",
+    description: "SF 规划局地图\n开放数据摘要",
+    icon: "map-outline",
     color: "#8B5CF6",
     iconBg: "bg-purple-500/15",
-    route: "/workbench/permit",
+    route: "/tools/permit",
     badge: "free",
   },
   {
@@ -65,27 +76,20 @@ function ToolCard({ tool }: { tool: Tool }) {
       className="flex-1 min-w-0 rounded-tool-card border border-slate-700/60 bg-surface-card p-4 active:bg-slate-700/60"
       style={{ minHeight: 140 }}
     >
-      {/* 图标 */}
-      <View className={`w-12 h-12 rounded-xl ${tool.iconBg} items-center justify-center mb-3`}>
-        <Ionicons name={tool.icon as any} size={24} color={tool.color} />
+      <View className={`mb-3 h-12 w-12 items-center justify-center rounded-xl ${tool.iconBg}`}>
+        <Ionicons name={tool.icon as never} size={24} color={tool.color} />
       </View>
-
-      {/* 名称 */}
-      <Text className="text-white font-semibold text-base mb-1">{tool.name}</Text>
-
-      {/* 描述 */}
-      <Text className="text-slate-400 text-xs leading-relaxed flex-1">{tool.description}</Text>
-
-      {/* 徽章 */}
+      <Text className="mb-1 text-base font-semibold text-white">{tool.name}</Text>
+      <Text className="flex-1 text-xs leading-relaxed text-slate-400">{tool.description}</Text>
       {tool.badge && (
         <View className="mt-2 self-start">
           {tool.badge === "pro" ? (
-            <View className="bg-accent-500/20 rounded px-2 py-0.5">
-              <Text className="text-accent-400 text-2xs font-semibold">Pro</Text>
+            <View className="rounded bg-accent-500/20 px-2 py-0.5">
+              <Text className="text-2xs font-semibold text-accent-400">Pro</Text>
             </View>
           ) : (
-            <View className="bg-success-500/20 rounded px-2 py-0.5">
-              <Text className="text-success-500 text-2xs font-semibold">免费</Text>
+            <View className="rounded bg-success-500/20 px-2 py-0.5">
+              <Text className="text-2xs font-semibold text-success-500">免费</Text>
             </View>
           )}
         </View>
@@ -94,7 +98,8 @@ function ToolCard({ tool }: { tool: Tool }) {
   );
 }
 
-export default function ToolsScreen() {
+export default function ToolsHubScreen() {
+  const tabBarH = useBottomTabBarHeight();
 
   const rows: Tool[][] = [];
   for (let i = 0; i < TOOLS.length; i += 2) {
@@ -103,38 +108,31 @@ export default function ToolsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-app" edges={["top"]}>
-      {/* 标题 */}
-      <View className="px-4 pt-2 pb-3">
+      <View className="px-4 pb-3 pt-2">
         <Text className="text-2xl font-bold text-white">工具中心</Text>
-        <Text className="text-sm text-slate-400 mt-0.5">提升效率的专业工具</Text>
+        <Text className="mt-0.5 text-sm text-slate-400">提升效率的专业工具</Text>
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: tabBarH + 28 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* 工具网格 */}
         {rows.map((row, rowIdx) => (
-          <View key={rowIdx} className="flex-row gap-3 mb-3">
+          <View key={rowIdx} className="mb-3 flex-row gap-3">
             {row.map((tool) => (
               <ToolCard key={tool.id} tool={tool} />
             ))}
-            {/* 补齐奇数行 */}
             {row.length === 1 && <View className="flex-1" />}
           </View>
         ))}
 
-        {/* Pro升级卡片 */}
-        <Pressable
-          onPress={() => {}}
-          className="mt-3 rounded-xl border border-accent-500/40 bg-accent-500/10 p-4 flex-row items-center gap-3 active:bg-accent-500/20"
-        >
-          <View className="w-10 h-10 rounded-xl bg-accent-500/20 items-center justify-center">
+        <Pressable className="mt-3 flex-row items-center gap-3 rounded-xl border border-accent-500/40 bg-accent-500/10 p-4 active:bg-accent-500/20">
+          <View className="h-10 w-10 items-center justify-center rounded-xl bg-accent-500/20">
             <Ionicons name="star" size={20} color="#F97316" />
           </View>
           <View className="flex-1">
-            <Text className="text-white font-semibold">升级 Pro 会员</Text>
-            <Text className="text-slate-400 text-sm mt-0.5">解锁全部工具，7天免费试用</Text>
+            <Text className="font-semibold text-white">升级 Pro 会员</Text>
+            <Text className="mt-0.5 text-sm text-slate-400">解锁全部工具，7天免费试用</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color="#F97316" />
         </Pressable>

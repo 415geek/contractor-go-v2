@@ -1,5 +1,18 @@
 # 部署检查清单
 
+## 变更后的第一件事：同步服务器
+
+**每次**在本仓库完成有效代码/配置改动后，应**优先**完成同步，再验收线上行为。
+
+| 改动范围 | 建议动作 |
+|----------|----------|
+| 任意 | `git push` 到约定分支 |
+| `mobile/**`（Web 可见） | `cd mobile && npm run build:web`，再部署到 Vercel 等（见 `mobile/docs/WEB_DEPLOY_CONTRACTORGO_IO.md`） |
+| `supabase/functions/**` | `supabase functions deploy <函数名>` |
+| Secrets | Supabase / Vercel 控制台更新，**无需**把密钥写入仓库 |
+
+Cursor 规则见：`.cursor/rules/deploy-sync-first.mdc`。
+
 ## HTTPS 证书
 
 - **www.contractorgo.io**：由 Traefik + Let's Encrypt 提供，有效期至约 6 个月

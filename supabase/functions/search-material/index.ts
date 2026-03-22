@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { openAiChatCompletion, stripJsonFence } from "../_shared/openai-chat.ts";
 import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
 import { getUserFromRequest } from "../_shared/get-user.ts";
 import { searchMaterialPrices } from "../_shared/nova-act-search.ts";
@@ -15,7 +16,7 @@ const VISION_PROMPT = (imageUrls: string[], description: string) =>
 Images: ${imageUrls.join(", ")}
 Description: ${description || "None"}
 
-Output JSON only:
+Output a single valid json object only:
 {
   "material_name": "材料名称",
   "material_name_en": "English name",
@@ -57,37 +58,27 @@ Deno.serve(async (req) => {
     let aiRecognized: Record<string, unknown> = {};
 
     if (imageUrls.length > 0) {
-      const anthropicKey = getEnv("ANTHROPIC_API_KEY");
-      const imageContent = imageUrls.slice(0, 5).map((url) => ({
-        type: "image" as const,
-        source: { type: "url" as const, url },
-      }));
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": anthropicKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
-          max_tokens: 1024,
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: VISION_PROMPT(imageUrls, description) },
-                ...imageContent,
-              ],
-            },
-          ],
-        }),
+      const userContent = [
+        { type: "text" as const, text: VISION_PROMPT(imageUrls, description) },
+        ...imageUrls.slice(0, 5).map((url) => ({
+          type: "image_url" as const,
+          image_url: { url, detail: "low" as const },
+        })),
+      ];
+      const ai = await openAiChatCompletion({
+        messages: [
+          {
+            role: "system",
+            content: "You analyze construction material photos. Respond with one valid JSON object only, no markdown.",
+          },
+          { role: "user", content: userContent },
+        ],
+        maxTokens: 1024,
+        responseFormatJsonObject: true,
       });
-      const json = await res.json();
-      const content = json.content?.[0]?.text?.trim() ?? "";
-      if (content) {
+      if (ai.ok) {
         try {
-          aiRecognized = JSON.parse(content);
+          aiRecognized = JSON.parse(stripJsonFence(ai.content));
           const kw = (aiRecognized.search_keywords as string[]) ?? [];
           if (Array.isArray(kw) && kw.length > 0) searchKeywords = kw;
           else if (aiRecognized.material_name_en) searchKeywords = [String(aiRecognized.material_name_en)];
@@ -95,6 +86,9 @@ Deno.serve(async (req) => {
         } catch {
           searchKeywords = [description || "construction material"];
         }
+      } else {
+        console.error("[search-material] openai vision failed", ai.message);
+        searchKeywords = [description || "construction material"];
       }
     } else if (description) {
       searchKeywords = [description];

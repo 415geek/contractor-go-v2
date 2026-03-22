@@ -13,6 +13,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { WebResponsiveWrapper } from "@/components/WebResponsiveWrapper";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { theme } from "@/lib/theme";
 
 WebBrowser.maybeCompleteAuthSession({ skipRedirectCheck: true });
 
@@ -46,8 +47,8 @@ function RootNavigator() {
 
   if (!isLoaded) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#0F172A", alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="large" color="#2563EB" />
+      <View style={{ flex: 1, backgroundColor: theme.bg, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
@@ -56,7 +57,7 @@ function RootNavigator() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: "#0F172A" },
+        contentStyle: { backgroundColor: theme.bg },
         animation: Platform.OS === "ios" ? "slide_from_right" : "fade",
         animationDuration: 250,
         gestureEnabled: Platform.OS === "ios",
@@ -72,8 +73,8 @@ const clerkKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 export default function RootLayout() {
   if (!clerkKey?.trim()) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#0F172A", padding: 24, justifyContent: "center" }}>
-        <Text style={{ color: "#EF4444", fontSize: 16 }}>缺少 EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY，请在 .env 中配置</Text>
+      <View style={{ flex: 1, backgroundColor: theme.bg, padding: 24, justifyContent: "center" }}>
+        <Text style={{ color: theme.danger, fontSize: 16 }}>缺少 EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY，请在 .env 中配置</Text>
       </View>
     );
   }
@@ -87,7 +88,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <SafeAreaProvider>
             <WebResponsiveWrapper>
-              <StatusBar style="light" />
+              <StatusBar style="dark" />
               <RootNavigator />
             </WebResponsiveWrapper>
           </SafeAreaProvider>

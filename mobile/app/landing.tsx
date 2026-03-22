@@ -1,19 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  Modal,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { Animated, Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { LogoMark } from "@/components/brand/LogoMark";
 import { LANG_OPTIONS, useLang } from "@/lib/i18n";
 
-// ─── Feature Card ─────────────────────────────────────────────────────────────
+// ─── Feature Card (Apple-like: breathing room, hairline border) ───────────────
 
 type Feature = {
   icon: string;
@@ -25,25 +19,12 @@ type Feature = {
 
 function FeatureCard({ icon, color, bg, title, desc }: Feature) {
   return (
-    <View className="flex-1 min-w-0 rounded-xl border border-slate-700/60 bg-surface-card p-4">
-      <View
-        className={`w-10 h-10 rounded-xl ${bg} items-center justify-center mb-3`}
-      >
-        <Ionicons name={icon as any} size={20} color={color} />
+    <View className="min-w-0 flex-1 rounded-[22px] border border-slate-200/90 bg-white p-5 shadow-card">
+      <View className={`mb-4 h-11 w-11 items-center justify-center rounded-[14px] ${bg}`}>
+        <Ionicons name={icon as "language-outline"} size={22} color={color} />
       </View>
-      <Text className="text-white font-semibold text-sm mb-1">{title}</Text>
-      <Text className="text-slate-400 text-xs leading-relaxed">{desc}</Text>
-    </View>
-  );
-}
-
-// ─── Stat Chip ────────────────────────────────────────────────────────────────
-
-function StatChip({ value, label }: { value: string; label: string }) {
-  return (
-    <View className="items-center px-4">
-      <Text className="text-2xl font-bold text-white">{value}</Text>
-      <Text className="text-xs text-slate-400 mt-0.5">{label}</Text>
+      <Text className="mb-1.5 text-[15px] font-semibold tracking-tight text-ink">{title}</Text>
+      <Text className="text-[13px] leading-[20px] text-ink-secondary">{desc}</Text>
     </View>
   );
 }
@@ -59,40 +40,33 @@ function LangPicker() {
     <>
       <Pressable
         onPress={() => setOpen(true)}
-        className="flex-row items-center gap-1.5 bg-surface-elevated px-3 py-1.5 rounded-full active:opacity-70"
+        className="flex-row items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2 shadow-sm active:opacity-70"
       >
         <Text className="text-base">{current.flag}</Text>
-        <Text className="text-white text-sm font-medium">{current.label}</Text>
-        <Ionicons name="chevron-down" size={13} color="#94A3B8" />
+        <Text className="text-[13px] font-medium text-ink">{current.label}</Text>
+        <Ionicons name="chevron-down" size={14} color="#8E8E93" />
       </Pressable>
 
-      <Modal
-        transparent
-        animationType="fade"
-        visible={open}
-        onRequestClose={() => setOpen(false)}
-      >
-        <Pressable
-          className="flex-1 justify-end bg-black/60"
-          onPress={() => setOpen(false)}
-        >
-          <View className="rounded-t-3xl bg-surface-card px-6 pt-5 pb-8">
-            <Text className="text-white text-lg font-bold mb-4">{t.langLabel}</Text>
+      <Modal transparent animationType="fade" visible={open} onRequestClose={() => setOpen(false)}>
+        <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setOpen(false)}>
+          <View className="rounded-t-[28px] border-t border-slate-200 bg-white px-6 pb-10 pt-6 shadow-elevated">
+            <Text className="mb-5 text-[17px] font-semibold text-ink">{t.langLabel}</Text>
             {LANG_OPTIONS.map((opt) => (
               <Pressable
                 key={opt.code}
-                onPress={() => { setLang(opt.code); setOpen(false); }}
-                className={`flex-row items-center gap-3 rounded-xl px-4 py-3.5 mb-2 active:opacity-70 ${
+                onPress={() => {
+                  setLang(opt.code);
+                  setOpen(false);
+                }}
+                className={`mb-2 flex-row items-center gap-3 rounded-2xl px-4 py-3.5 active:opacity-80 ${
                   lang === opt.code
-                    ? "bg-primary-500/20 border border-primary-500/50"
-                    : "bg-surface-elevated"
+                    ? "border border-primary-500/35 bg-primary-500/10"
+                    : "border border-slate-100 bg-slate-50"
                 }`}
               >
                 <Text className="text-2xl">{opt.flag}</Text>
-                <Text className="text-white font-medium flex-1">{opt.label}</Text>
-                {lang === opt.code && (
-                  <Ionicons name="checkmark-circle" size={20} color="#2563EB" />
-                )}
+                <Text className="flex-1 text-[16px] font-medium text-ink">{opt.label}</Text>
+                {lang === opt.code && <Ionicons name="checkmark-circle" size={22} color="#007AFF" />}
               </Pressable>
             ))}
           </View>
@@ -102,30 +76,23 @@ function LangPicker() {
   );
 }
 
-// ─── Landing Page ─────────────────────────────────────────────────────────────
-
-const STAT_LABELS = {
-  zh: ["包工头", "材料节省", "支持语言"],
-  en: ["Contractors", "Saved", "Languages"],
-  es: ["Contratistas", "Ahorrado", "Idiomas"],
-} as const;
+// ─── Landing ──────────────────────────────────────────────────────────────────
 
 export default function LandingScreen() {
   const router = useRouter();
-  const { t, loadLang, lang } = useLang();
-  const statLabels = STAT_LABELS[lang] ?? STAT_LABELS.zh;
+  const { t, loadLang } = useLang();
   const insets = useSafeAreaInsets();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(24)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.97,
+      toValue: 0.98,
       useNativeDriver: true,
-      speed: 50,
-      bounciness: 4,
+      speed: 45,
+      bounciness: 3,
     }).start();
   };
 
@@ -133,54 +100,59 @@ export default function LandingScreen() {
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
-      speed: 50,
-      bounciness: 4,
+      speed: 45,
+      bounciness: 3,
     }).start();
   };
 
   useEffect(() => {
+    let cancelled = false;
     loadLang().then(() => {
+      if (cancelled) return;
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
-          duration: 500,
+          duration: 480,
           useNativeDriver: true,
         }),
         Animated.timing(slideAnim, {
           toValue: 0,
-          duration: 500,
+          duration: 480,
           useNativeDriver: true,
         }),
       ]).start();
     });
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [fadeAnim, loadLang, slideAnim]);
 
   const features: Feature[] = [
     {
       icon: "language-outline",
-      color: "#2563EB",
-      bg: "bg-primary-500/15",
+      color: "#007AFF",
+      bg: "bg-primary-500/12",
       title: t.feature1Title,
       desc: t.feature1Desc,
     },
     {
       icon: "document-text-outline",
-      color: "#F97316",
-      bg: "bg-accent-500/15",
+      color: "#FF9500",
+      bg: "bg-orange-500/12",
       title: t.feature2Title,
       desc: t.feature2Desc,
     },
     {
       icon: "pricetag-outline",
-      color: "#22C55E",
-      bg: "bg-success-500/15",
+      color: "#34C759",
+      bg: "bg-emerald-500/12",
       title: t.feature3Title,
       desc: t.feature3Desc,
     },
     {
       icon: "briefcase-outline",
-      color: "#8B5CF6",
-      bg: "bg-purple-500/15",
+      color: "#5856D6",
+      bg: "bg-violet-500/12",
       title: t.feature4Title,
       desc: t.feature4Desc,
     },
@@ -190,77 +162,60 @@ export default function LandingScreen() {
     <SafeAreaView className="flex-1 bg-surface-app" edges={["top", "left", "right"]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) }}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 32) }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* ── 顶部栏：Logo + 语言切换 ── */}
-        <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
-          <View className="flex-row items-center gap-2">
-            <View className="w-8 h-8 rounded-lg bg-primary-600 items-center justify-center">
-              <Ionicons name="construct" size={16} color="white" />
-            </View>
-            <Text className="text-white font-bold text-lg tracking-tight">
-              Contractor GO
-            </Text>
+        {/* Top bar */}
+        <View className="flex-row items-center justify-between px-6 pb-1 pt-3">
+          <View className="flex-row items-center gap-3">
+            <LogoMark size={40} variant="onLight" />
+            <Text className="text-[20px] font-semibold tracking-tight text-ink">Contractor GO</Text>
           </View>
           <LangPicker />
         </View>
 
-        <Animated.View
-          style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}
-        >
-          {/* ── Hero 区域 ── */}
-          <View className="px-5 pt-6 pb-8">
-            {/* 渐变背景卡片 */}
-            <View
-              className="rounded-2xl overflow-hidden p-6 mb-6"
-              style={{
-                background: "linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 50%, #2563EB 100%)",
-                backgroundColor: "#1E3A8A",
-              }}
-            >
-              {/* 装饰圆圈 */}
-              <View
-                className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5"
-              />
-              <View
-                className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full bg-white/5"
-              />
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+          <View className="px-6 pt-4">
+            {/* Hero — Proma 风格：主色蓝 + 柔和装饰 */}
+            <View className="relative mb-10 overflow-hidden rounded-[32px] bg-[#007AFF] px-7 pb-9 pt-10 shadow-button-lg">
+              <View className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/15" />
+              <View className="absolute -bottom-10 -left-10 h-36 w-36 rounded-full bg-[#5856D6]/35" />
+              <View className="absolute bottom-8 right-6 h-24 w-24 rounded-full bg-white/10" />
 
-              {/* 工人图标 */}
-              <View className="w-16 h-16 rounded-2xl bg-white/15 items-center justify-center mb-4">
-                <Ionicons name="hard-hat-outline" size={32} color="white" />
+              <View className="mb-6">
+                <LogoMark size={88} variant="onDark" />
               </View>
 
-              <Text className="text-3xl font-bold text-white leading-tight">
-                {t.tagline}
+              <Text className="text-[26px] font-semibold leading-[34px] tracking-tight text-white">
+                {t.heroLine1}
               </Text>
-              <Text className="text-primary-200 text-sm mt-2.5 leading-relaxed">
-                {t.subtitle}
+              <Text className="mt-3 text-[17px] font-medium leading-[24px] tracking-tight text-white/95">
+                {t.heroLine2}
+              </Text>
+              <Text className="mt-3 text-[17px] font-medium leading-[24px] tracking-tight text-white/95">
+                {t.heroLine3}
               </Text>
 
-              {/* 评分 */}
-              <View className="flex-row items-center gap-1 mt-4">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Ionicons key={i} name="star" size={14} color="#FCD34D" />
-                ))}
-                <Text className="text-primary-200 text-xs ml-1">4.9 · App Store</Text>
+              <View className="mt-7 flex-row flex-wrap items-center gap-2">
+                <View className="rounded-full bg-black/10 px-3 py-1.5">
+                  <Text className="text-[12px] font-medium tracking-wide text-white/95">{t.heroProof}</Text>
+                </View>
               </View>
             </View>
 
-            {/* 数据统计 */}
-            <View className="rounded-xl border border-slate-700/60 bg-surface-card py-4 mb-6">
-              <View className="flex-row items-center justify-around">
-                <StatChip value="5,000+" label={statLabels[0]} />
-                <View className="w-px h-8 bg-slate-700" />
-                <StatChip value="$2M+" label={statLabels[1]} />
-                <View className="w-px h-8 bg-slate-700" />
-                <StatChip value="3" label={statLabels[2]} />
-              </View>
+            {/* Languages */}
+            <View className="mb-10 rounded-[22px] border border-slate-200 bg-white px-6 py-5 shadow-card">
+              <Text className="mb-1 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-tertiary">
+                {t.languagesLabel}
+              </Text>
+              <Text className="text-center text-[16px] font-medium tracking-tight text-ink">{t.languagesValue}</Text>
             </View>
 
-            {/* 功能卡片网格 */}
-            <View className="gap-3 mb-6">
+            {/* Section: features */}
+            <Text className="mb-4 px-1 text-[13px] font-semibold uppercase tracking-[0.12em] text-ink-tertiary">
+              {t.sectionFeatures}
+            </Text>
+            <View className="mb-10 gap-3">
               <View className="flex-row gap-3">
                 <FeatureCard {...features[0]} />
                 <FeatureCard {...features[1]} />
@@ -271,50 +226,51 @@ export default function LandingScreen() {
               </View>
             </View>
 
-            {/* 社会认同 */}
-            <View className="rounded-xl border border-primary-500/30 bg-primary-500/10 p-4 mb-4">
-              <View className="flex-row items-start gap-3">
-                <View className="w-10 h-10 rounded-full bg-primary-700 items-center justify-center flex-shrink-0">
-                  <Text className="text-white font-bold">张</Text>
+            {/* Testimonial */}
+            <Text className="mb-4 px-1 text-[13px] font-semibold uppercase tracking-[0.12em] text-ink-tertiary">
+              {t.sectionStories}
+            </Text>
+            <View className="mb-8 rounded-[22px] border border-slate-200 bg-white p-6 shadow-card">
+              <View className="flex-row items-start gap-4">
+                <View className="h-11 w-11 items-center justify-center rounded-full bg-primary-500/12">
+                  <Text className="text-[15px] font-semibold text-primary-600">{t.testimonialInitial}</Text>
                 </View>
-                <View className="flex-1">
-                  <Text className="text-white font-semibold text-sm">老张 · SF 包工头</Text>
-                  <Text className="text-slate-300 text-sm mt-1 leading-relaxed">
-                    "用了Contractor GO之后，和客户沟通方便多了，报价也专业了，接单量增加了30%"
-                  </Text>
-                  <View className="flex-row items-center gap-0.5 mt-1.5">
-                    {[1,2,3,4,5].map(i => (
-                      <Ionicons key={i} name="star" size={11} color="#FCD34D" />
+                <View className="min-w-0 flex-1">
+                  <Text className="text-[15px] font-semibold text-ink">{t.testimonialName}</Text>
+                  <Text className="mt-2 text-[15px] leading-[22px] text-ink-secondary">{t.testimonialQuote}</Text>
+                  <View className="mt-3 flex-row gap-0.5">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Ionicons key={i} name="star" size={12} color="#FFCC00" />
                     ))}
                   </View>
                 </View>
               </View>
             </View>
 
-            {/* ── CTA 按钮 ── */}
+            {/* CTA */}
             <Pressable
               onPress={() => router.push("/(auth)/login")}
               onPressIn={handlePressIn}
               onPressOut={handlePressOut}
             >
               <Animated.View
-                className="min-h-touch-xl items-center justify-center rounded-xl bg-primary-600"
+                className="min-h-[52px] items-center justify-center rounded-full bg-primary-500 active:bg-primary-600"
                 style={{
                   transform: [{ scale: scaleAnim }],
-                  shadowColor: "#2563EB",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.4,
-                  shadowRadius: 12,
+                  shadowColor: "#007AFF",
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 16,
                 }}
               >
-                <Text className="text-white font-bold text-base">{t.startBtn}</Text>
+                <Text className="text-[17px] font-semibold text-white">{t.startBtn}</Text>
               </Animated.View>
             </Pressable>
             <Pressable
               onPress={() => router.push("/(auth)/login")}
-              className="min-h-touch items-center justify-center rounded-xl border border-slate-700 active:bg-surface-elevated mt-3"
+              className="mt-4 min-h-[48px] items-center justify-center rounded-full border border-slate-300 bg-white active:bg-slate-50"
             >
-              <Text className="text-slate-300 text-sm">{t.loginBtn}</Text>
+              <Text className="text-[15px] text-primary-600">{t.loginBtn}</Text>
             </Pressable>
           </View>
         </Animated.View>

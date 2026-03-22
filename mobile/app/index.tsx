@@ -8,10 +8,10 @@ export default function IndexScreen() {
   if (!isLoaded) {
     return (
       <View className="flex-1 items-center justify-center bg-surface-app">
-        <ActivityIndicator color="#2563EB" size="large" />
+        <ActivityIndicator color="#007AFF" size="large" />
       </View>
     );
   }
 
-  return <Redirect href={isSignedIn ? "/(tabs)" : "/landing"} />;
+  return <Redirect href={(isSignedIn ? "/home" : "/landing") as never} />;
 }
