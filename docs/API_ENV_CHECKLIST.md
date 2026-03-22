@@ -13,6 +13,9 @@
 | `SUPABASE_SERVICE_ROLE_KEY` | 自动注入 | ✓ |
 | `OPENAI_API_KEY` | Chat Completions（项目解析、生成计划、翻译、材料/房屋视觉、Permit 解析）+ Whisper（项目语音） | ✓（AI/语音相关功能） |
 | `OPENAI_CHAT_MODEL` | 覆盖默认聊天模型（默认 `gpt-4o-mini`）；也可设 `OPENAI_MODEL` | 可选 |
+| `STRIPE_SECRET_KEY` | `create-stripe-checkout` / 服务端 | 若启用 Stripe 订阅 |
+| `STRIPE_WEBHOOK_SECRET` | `stripe-webhook` 签名校验 | 若启用 Stripe 订阅 |
+| `STRIPE_PRICE_ID_PRO` | Pro 月付 Price（`price_...`） | 若启用 Checkout |
 | `TELNYX_API_KEY` | Telnyx 搜索/购买号码、发短信 | ✓（若用虚拟号码） |
 | `TELNYX_MESSAGING_PROFILE_ID` | 订购时绑定 Messaging Profile（推荐） | 可选 |
 | `TELNYX_CONNECTION_ID` | 订购时绑定语音 Connection | 可选 |
