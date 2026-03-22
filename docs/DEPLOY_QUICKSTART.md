@@ -4,15 +4,24 @@
 
 ---
 
+## 用户端用哪个 Vercel 项目？（必读）
+
+**生产前端 = Dashboard 里的 Vercel 项目 `contractorgo-web`（名称以你创建时为准，团队约定用此名）。**
+
+- 在 **`contractorgo-web`** 里：连接 **本 GitHub 仓库**，**Root Directory 留空**（整个 monorepo 根），由根目录 **`vercel.json`** 执行 `build:web` → 输出 **`mobile/dist`**。  
+- **`www.contractorgo.io` / `contractorgo.io` 只绑在 `contractorgo-web` 上**，所有 `EXPO_PUBLIC_*` 环境变量也只配在这一项里。
+
+**不要**用另建的「Root Directory = `mobile`」或 CLI 在 `mobile/` 里 `vercel deploy` 出来的**预览/实验项目**当正式站；那些项目与 `contractorgo-web` **不是同一个**，环境变量互不相通，极易出现错 Supabase URL、Clerk 占位符等问题。
+
+---
+
 ## 架构（不要搞混）
 
 | 组件 | 说明 |
 |------|------|
-| **Vercel 项目 A：用户端** | 连接 **本仓库根目录**，`Root Directory` **留空**，用根目录 `vercel.json` 构建 `mobile/dist` |
-| **Vercel 项目 B：管理后台** | `Root Directory` = `admin`，Next.js |
+| **`contractorgo-web`（用户端）** | 仓库**根目录** + Root Directory **留空** + 根 `vercel.json` → `mobile/dist` |
+| **`contractorgo-admin`（管理后台）** | Root Directory = `admin`，Next.js |
 | **Supabase** | 数据库 + Edge Functions；**Project URL 与 anon key 必须同一页复制** |
-
-不要用「只导入 `mobile/` 子目录」的项目去绑 **www.contractorgo.io**，除非你在该项目里也配齐全部 `EXPO_PUBLIC_*`（易与根目录项目重复、搞错变量）。
 
 ---
 
@@ -52,12 +61,13 @@ supabase db push --yes
 
 ---
 
-## 第二步：Vercel — 用户端（www.contractorgo.io）
+## 第二步：Vercel — 用户端 `contractorgo-web`（www.contractorgo.io）
 
-### 2.1 项目设置
+### 2.1 项目设置（必须打开 **contractorgo-web** 再改）
 
 | 项 | 值 |
 |----|-----|
+| **Vercel 项目** | **`contractorgo-web`**（不要用别的项目配正式域名） |
 | Root Directory | **留空**（仓库根） |
 | Framework | **Other** |
 | Build / Output | 使用根目录 `vercel.json`（`npm run build:web` → `mobile/dist`） |

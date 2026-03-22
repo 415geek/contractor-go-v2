@@ -16,6 +16,7 @@ Phase 1 已完成以下基础能力：
 ## 生产部署（配置 + 命令）
 
 **一页汇总**：[`docs/DEPLOY_QUICKSTART.md`](docs/DEPLOY_QUICKSTART.md)（Vercel 用户端/后台、Supabase Secrets、CLI）。  
+**用户端生产部署 = Vercel 项目 `contractorgo-web`**（仓库根目录、Root Directory 留空），不要用仅 `mobile` 子目录的其它项目绑 www。  
 细节与域名：**[`docs/VERCEL_SETUP.md`](docs/VERCEL_SETUP.md)**；鉴权 401：**[`docs/DEBUG_AUTH.md`](docs/DEBUG_AUTH.md)**。
 
 ## 环境变量

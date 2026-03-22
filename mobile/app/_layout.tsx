@@ -85,9 +85,9 @@ export default function RootLayout() {
       <View style={{ flex: 1, backgroundColor: theme.bg, padding: 24, justifyContent: "center" }}>
         <Text style={{ color: theme.danger, fontSize: 18, fontWeight: "600", marginBottom: 12 }}>Clerk 公钥无效（占位符）</Text>
         <Text style={{ color: theme.inkSecondary, fontSize: 14, lineHeight: 22 }}>
-          当前值为文档占位符（如 pk_test_xxxxxxxx…）。请在 Vercel → 对应项目 → Settings → Environment Variables 中，将
-          EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY 替换为 Clerk Dashboard → API Keys 里的真实 Publishable key（生产用 pk_live_），保存后
-          Redeploy。若从仓库根目录部署 www.contractorgo.io，请配置在 contractorgo-web 项目，而非仅本地 mobile 子目录预览项目。
+          当前值为文档占位符（如 pk_test_xxxxxxxx…）。生产站必须在 Vercel 项目「contractorgo-web」（仓库根目录、Root Directory
+          留空）→ Settings → Environment Variables 中填写 EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY（Clerk 真实 pk_），保存后 Redeploy。不要用
+          Root=mobile 的其它 Vercel 项目代替 contractorgo-web。
         </Text>
       </View>
     );

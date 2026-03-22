@@ -26,6 +26,8 @@
 
 ## 用户端 Web（Vercel 环境变量）
 
+> 以下变量只配在 **`contractorgo-web`** 项目（Git 根目录、Root Directory 留空），与 `www.contractorgo.io` 正式站一致。勿只配在 Root=`mobile` 的预览项目。
+
 | 变量 | 用途 |
 |------|------|
 | `EXPO_PUBLIC_SUPABASE_URL` | Supabase 连接 |
