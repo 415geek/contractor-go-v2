@@ -36,6 +36,7 @@
 | `EXPO_PUBLIC_SUPABASE_URL` | 你的 Supabase URL（如 `https://wvqyoyfiqixtmxssvlco.supabase.co`） |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | 你的 Supabase anon key（Dashboard → Project Settings → API） |
 | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk Publishable key（`pk_live_...` / `pk_test_...`） |
+| `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe Publishable key（`pk_live_...` / `pk_test_...`）；仅公钥，勿填 `sk_` |
 | `EXPO_PUBLIC_APP_URL` | `https://www.contractorgo.io` |
 
 ### 4. 部署

@@ -41,13 +41,30 @@ STRIPE_PRICE_ID_PRO=price_...
 
 本地用 Stripe CLI 转发 Webhook 时：`stripe listen --forward-to localhost:54321/functions/v1/stripe-webhook`，CLI 会打印一个 **临时** `whsec_` 用于本地。
 
-## 4. 前端（Expo / Web）
+## 4. 前端（Expo / Web / Vercel）
 
-在 `mobile/.env` 与 Vercel 环境变量中添加（**仅 Publishable key**）：
+**仅配置 Publishable key（`pk_`）**，与 Secret key（`sk_`）区分：前者可出现在浏览器与 App 内。
+
+### 本地 Expo
+
+1. 复制 `mobile/.env.example` 为 `mobile/.env`（若尚未建立）。
+2. 在 Stripe [API keys](https://dashboard.stripe.com/apikeys) 复制 **Publishable key**。
+3. 在 `mobile/.env` 中设置：
 
 ```bash
-EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_你的完整字符串
 ```
+
+4. 重启开发服务器：`npx expo start`（改 `.env` 后需重启）。
+
+代码中可通过 `import { getStripePublishableKey } from "@/lib/stripe-config"` 读取（未配置时返回 `null`）。
+
+### Vercel（用户端 Web 项目，根目录构建）
+
+1. Vercel → 你的 **contractorgo-web** 项目 → **Settings** → **Environment Variables**。
+2. 添加 **Name**：`EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY`，**Value**：你的 `pk_test_...` 或生产环境 `pk_live_...`。
+3. 勾选 **Production**（及需要的 Preview）。
+4. **Save** 后对最新 commit **Redeploy**，否则静态包里仍是旧值。
 
 ## 5. 数据库迁移
 
