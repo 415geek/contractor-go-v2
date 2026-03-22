@@ -118,32 +118,54 @@ function pickUserIdAndEmailFromVerifiedClaims(
   return { userId, email };
 }
 
+async function verifyClerkSessionToken(
+  token: string,
+  mode: { secretKey: string } | { jwtKey: string },
+): Promise<Record<string, unknown> | null> {
+  const { verifyToken } = await import("npm:@clerk/backend@2.33.0");
+  const extra = clerkVerifyExtraOptions();
+  const base = "secretKey" in mode ? { secretKey: mode.secretKey } : { jwtKey: mode.jwtKey };
+
+  try {
+    const p = await verifyToken(token, { ...base, ...extra });
+    return p as Record<string, unknown>;
+  } catch (e1) {
+    // 配置了 authorizedParties 但漏了当前站点（如只配了 www 却从根域打开）时，第一次校验会失败
+    if (Object.keys(extra).length > 0) {
+      try {
+        const p = await verifyToken(token, base);
+        console.warn(
+          "[get-user] verifyToken: 带 authorizedParties 失败，已回退为不校验 azp；请在 CLERK_AUTHORIZED_PARTIES 中补全所有前端来源，或删除该 Secret。",
+          e1,
+        );
+        return p as Record<string, unknown>;
+      } catch (e2) {
+        console.warn("[get-user] verifyToken failed (with parties, then without):", e1, e2);
+      }
+    } else {
+      console.warn("[get-user] verifyToken failed:", e1);
+    }
+  }
+  return null;
+}
+
 async function resolveClerkUserIdAndEmail(token: string): Promise<{ userId: string; email: string | null } | null> {
   const secret = Deno.env.get("CLERK_SECRET_KEY")?.trim();
   const jwtKey = Deno.env.get("CLERK_JWT_KEY")?.trim();
   const parts = token.split(".");
 
-  if (secret || jwtKey) {
-    const { verifyToken } = await import("npm:@clerk/backend@2.33.0");
-    const extra = clerkVerifyExtraOptions();
-    if (secret) {
-      try {
-        const p = await verifyToken(token, { secretKey: secret, ...extra });
-        const out = pickUserIdAndEmailFromVerifiedClaims(p as Record<string, unknown>);
-        if (out) return out;
-      } catch (e) {
-        console.warn("[get-user] verifyToken(secretKey) failed:", e);
-      }
+  if (secret) {
+    const p = await verifyClerkSessionToken(token, { secretKey: secret });
+    if (p) {
+      const out = pickUserIdAndEmailFromVerifiedClaims(p);
+      if (out) return out;
     }
-    /** PEM 公钥：Edge 无网络拉 JWKS 时推荐；Dashboard → API Keys → JWT verification key */
-    if (jwtKey) {
-      try {
-        const p = await verifyToken(token, { jwtKey, ...extra });
-        const out = pickUserIdAndEmailFromVerifiedClaims(p as Record<string, unknown>);
-        if (out) return out;
-      } catch (e) {
-        console.warn("[get-user] verifyToken(jwtKey) failed:", e);
-      }
+  }
+  if (jwtKey) {
+    const p = await verifyClerkSessionToken(token, { jwtKey });
+    if (p) {
+      const out = pickUserIdAndEmailFromVerifiedClaims(p);
+      if (out) return out;
     }
   }
 
@@ -173,10 +195,30 @@ export type RequestUser = { id: string; email: string | null };
 
 export async function getUserFromRequest(req: Request): Promise<RequestUser | null> {
   const token = extractClerkBearerToken(req);
-  if (!token) return null;
+  if (!token) {
+    console.warn(
+      "[get-user] no Clerk bearer token: check X-Clerk-Authorization / Authorization; if Authorization is Supabase anon JWT it is ignored",
+    );
+    return null;
+  }
 
   const resolved = await resolveClerkUserIdAndEmail(token);
-  if (!resolved) return null;
+  if (!resolved) {
+    const segs = token.split(".").length;
+    console.warn("[get-user] token present but Clerk user unresolved", {
+      tokenDotSegments: segs,
+      hasClerkSecretKey: !!Deno.env.get("CLERK_SECRET_KEY")?.trim(),
+      hasClerkJwtKey: !!Deno.env.get("CLERK_JWT_KEY")?.trim(),
+      hasAuthorizedParties: !!Deno.env.get("CLERK_AUTHORIZED_PARTIES")?.trim(),
+      hint:
+        segs >= 5 && !Deno.env.get("CLERK_SECRET_KEY")?.trim() && !Deno.env.get("CLERK_JWT_KEY")?.trim()
+          ? "JWE session needs CLERK_SECRET_KEY or CLERK_JWT_KEY in Edge secrets"
+          : segs >= 5
+            ? "verifyToken failed: check sk_/pk_ same Clerk app (test vs live), or remove/fix CLERK_AUTHORIZED_PARTIES"
+            : "manual JWT decode failed or missing sub",
+    });
+    return null;
+  }
 
   const { userId, email } = resolved;
 
