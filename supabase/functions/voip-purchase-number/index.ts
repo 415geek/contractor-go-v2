@@ -1,5 +1,6 @@
 import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
 import {
+  humanizeTelnyxNumberOrderError,
   normalizeToE164US,
   parseTelnyxConnectionId,
   parseTelnyxMessagingProfileId,
@@ -153,8 +154,10 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("[voip-purchase-number]", e);
+    const raw = e instanceof Error ? e.message : "Purchase failed";
+    const message = humanizeTelnyxNumberOrderError(raw);
     return jsonResponse(
-      { data: null, error: "telnyx_error", message: e instanceof Error ? e.message : "Purchase failed" },
+      { data: null, error: "telnyx_error", message },
       500,
     );
   }

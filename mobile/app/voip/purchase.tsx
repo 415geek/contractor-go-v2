@@ -44,6 +44,27 @@ export default function VoipPurchaseScreen() {
 
   const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
+  /** 统一购号失败文案：区分 Telnyx 账号配额 vs 本应用「每用户 1 号」 */
+  const mapPurchaseError = (raw: string): string => {
+    const m = raw.trim();
+    const lower = m.toLowerCase();
+    if (m.includes("每位用户仅可绑定一个虚拟号码") || lower.includes("already_has_number")) {
+      return "在 Contractor GO 中，您的账号已绑定 1 个虚拟号码，无法再买第二个。若列表里看不到号码，请下拉刷新「我的号码」或联系支持同步数据。";
+    }
+    if (
+      lower.includes("only 1 order") ||
+      lower.includes("telnyx.com/upgrade") ||
+      lower.includes("account level")
+    ) {
+      return [
+        "这是 Telnyx（电话供应商）对您当前 API Key 账号的限制，不是 App 里「免费试用文案」本身。",
+        "常见原因：Telnyx 试用账号整账号只允许 1 笔号码订单，或团队多人共用同一 Key 已被占用。",
+        "订购未成功时，「我的号码」不会显示新号码。请在 Telnyx 后台升级或检查已有号码/订单。",
+      ].join("");
+    }
+    return m;
+  };
+
   const alertNative = (title: string, message?: string) => {
     if (Platform.OS !== "web") Alert.alert(title, message);
   };
@@ -116,7 +137,7 @@ export default function VoipPurchaseScreen() {
       setConfirmDid(null);
       router.replace("/voip");
     } catch (e) {
-      let m = errMsg(e);
+      let m = mapPurchaseError(errMsg(e));
       if (/invalid or missing token/i.test(m)) {
         m =
           "身份校验失败。请确认：1）Supabase Edge Functions Secrets 已配置 CLERK_SECRET_KEY（与当前 Clerk 应用一致）；2）网站与 Clerk 同为正式(live)或同为测试(test)；3）刷新后重试。";

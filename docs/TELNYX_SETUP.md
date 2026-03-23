@@ -41,3 +41,10 @@ supabase functions deploy voip-available-numbers voip-rate-centers voip-purchase
 ## 5. 数据库
 
 `virtual_numbers.provider` 新购号码为 `telnyx`；历史 `voipms` 行仍保留，直至迁移或手动更新。
+
+## 6. 常见错误：Only 1 order is allowed at your account level
+
+这是 **Telnyx 对当前 API Key 对应账号** 的限制（试用/低等级账号常见：整账号只允许有限笔 `number_orders`），**不是** Contractor GO 产品文案里「免费档每用户 1 个号码」的同一件事。
+
+- 若多人/多环境共用同一个 `TELNYX_API_KEY`，**任一环境先下单**都可能占满 Telnyx 侧额度，其他人会收到该英文报错，且 **App 内「我的号码」仍为空**（因为订单未成功完成、未写入 `virtual_numbers`）。
+- 处理：在 [Telnyx Portal](https://portal.telnyx.com/) 升级套餐、使用生产专用 Key，或释放/完成已有号码订单；详见官方 [upgrade](https://telnyx.com/upgrade) 与计费说明。

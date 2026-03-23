@@ -58,12 +58,17 @@ export default function VoipIndexScreen() {
         <View className="flex-1 items-center justify-center px-8">
           <Ionicons name="call-outline" size={64} color="#6B7280" />
           <Text className="text-gray-400 text-center mt-4 text-lg">您还没有虚拟号码</Text>
-          <Text className="text-gray-500 text-center mt-2">点击下方按钮购买</Text>
+          <Text className="text-gray-500 text-center mt-2">
+            仅当购号在供应商侧成功并写入本应用后，才会显示在此。若购买页报错（例如 Telnyx 账号额度），此处会保持为空。
+          </Text>
+          <Text className="text-gray-500 text-center mt-2 text-xs leading-5">
+            免费档说明：产品侧每位用户可绑定 1 个号码；与 Telnyx 控制台对「API Key 账号」的订购上限是两层限制，可能同时存在。
+          </Text>
           <Pressable
             onPress={() => pushPath("/voip/purchase")}
             className="mt-6 bg-blue-600 px-6 py-3 rounded-lg"
           >
-            <Text className="text-white font-medium">购买新号码</Text>
+            <Text className="text-white font-medium">去购买号码</Text>
           </Pressable>
         </View>
       ) : (

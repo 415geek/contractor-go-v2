@@ -70,6 +70,28 @@ function telnyxErrorMessage(json: unknown): string {
   return (e?.detail ?? e?.title ?? "Telnyx API error").trim();
 }
 
+/**
+ * 将 Telnyx 订购接口的英文错误转为产品侧可读说明（避免与「免费试用仅 1 个号码」混淆）。
+ * @see https://telnyx.com/pricing — 试用/低等级账号常有「整账号仅允许 1 笔 number order」限制
+ */
+export function humanizeTelnyxNumberOrderError(raw: string): string {
+  const t = raw.trim();
+  const lower = t.toLowerCase();
+  if (
+    lower.includes("only 1 order") ||
+    lower.includes("one order is allowed") ||
+    lower.includes("telnyx.com/upgrade") ||
+    lower.includes("account level")
+  ) {
+    return [
+      "Telephony 供应商 Telnyx 拒绝了本次订购：当前使用的 API Key 对应账号在 Telnyx 侧已达到「可下订单」上限（常见于试用/未升级账号；若团队多人共用同一 Key，也可能被他人占用）。",
+      "这与 Contractor GO「免费档每用户 1 个号码」不是同一概念：若订购失败，App 内「我的号码」不会显示新号码。",
+      "请在 Telnyx 控制台升级套餐或检查是否已有号码/未完成订单；必要时更换专用生产 API Key。",
+    ].join(" ");
+  }
+  return t;
+}
+
 /** 构建 available_phone_numbers 查询（filter[*] 形式） */
 export function buildAvailablePhoneNumbersQuery(f: TelnyxAvailableFilters): string {
   const p = new URLSearchParams();
