@@ -18,8 +18,9 @@ import { useAuth } from "@clerk/clerk-expo";
 
 import { useProjects } from "@/hooks/useProjects";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
-import { invokeEdgeWithClerk } from "@/lib/api/edge-functions";
+import { invokeEdgeWithClerkFromAuth } from "@/lib/api/edge-functions";
 import { parseProjectViaEdge } from "@/lib/api/parse-project";
+import { getClerkSessionTokenForEdge } from "@/lib/clerk-session-token";
 
 type ParseResult = {
   project_name: string | null;
@@ -85,8 +86,7 @@ export default function CreateProjectScreen() {
     setParsed(null);
     setParseBanner(null);
     try {
-      const token = await getToken();
-      if (!token) throw new Error("未登录");
+      const token = await getClerkSessionTokenForEdge(getToken);
       const { parsed: result } = await parseProjectViaEdge(token, { input: text, input_type: "text" });
       if (!result) {
         throw new Error("服务未返回解析结果，请重试");
@@ -110,8 +110,7 @@ export default function CreateProjectScreen() {
       const base64 = await readAsStringAsync(uri, {
         encoding: EncodingType.Base64,
       });
-      const token = await getToken();
-      if (!token) throw new Error("未登录");
+      const token = await getClerkSessionTokenForEdge(getToken);
       const { parsed: result } = await parseProjectViaEdge(token, {
         input_type: "voice",
         audio_base64: base64,
@@ -145,13 +144,10 @@ export default function CreateProjectScreen() {
       duration_days: days,
     });
     try {
-      const token = await getToken();
-      if (token) {
-        await invokeEdgeWithClerk<unknown>("generate-plan", token, {
-          method: "POST",
-          body: { project_id: project.id },
-        });
-      }
+      await invokeEdgeWithClerkFromAuth<unknown>(getToken, "generate-plan", {
+        method: "POST",
+        body: { project_id: project.id },
+      });
     } catch {
       // non-blocking
     }

@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-expo";
 
-import { invokeEdgeWithClerk } from "@/lib/api/edge-functions";
+import { invokeEdgeWithClerkFromAuth } from "@/lib/api/edge-functions";
 
 export type EstimateSegment = {
   id: string;
@@ -38,9 +38,7 @@ export function useHouseEstimate() {
     setError(null);
     setResult(null);
     try {
-      const token = await getToken();
-      if (!token) throw new Error("Not authenticated");
-      const data = await invokeEdgeWithClerk<HouseEstimateResult>("estimate-house", token, {
+      const data = await invokeEdgeWithClerkFromAuth<HouseEstimateResult>(getToken, "estimate-house", {
         method: "POST",
         body: { image_urls: imageUrls },
       });

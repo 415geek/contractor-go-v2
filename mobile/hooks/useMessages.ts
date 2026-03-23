@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useAuth } from "@clerk/clerk-expo";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { invokeEdgeWithClerk } from "@/lib/api/edge-functions";
+import { invokeEdgeWithClerkFromAuth } from "@/lib/api/edge-functions";
 
 export type Message = {
   id: string;
@@ -16,18 +16,14 @@ export type Message = {
 };
 
 async function fetchMessages(getToken: () => Promise<string | null>, conversationId: string): Promise<Message[]> {
-  const token = await getToken();
-  if (!token) throw new Error("Not authenticated");
-  return invokeEdgeWithClerk<Message[]>("get-messages", token, {
+  return invokeEdgeWithClerkFromAuth<Message[]>(getToken, "get-messages", {
     method: "POST",
     body: { conversation_id: conversationId },
   });
 }
 
 async function sendMessage(getToken: () => Promise<string | null>, conversationId: string, content: string): Promise<Message> {
-  const token = await getToken();
-  if (!token) throw new Error("Not authenticated");
-  const data = await invokeEdgeWithClerk<Message>("send-message", token, {
+  const data = await invokeEdgeWithClerkFromAuth<Message>(getToken, "send-message", {
     method: "POST",
     body: { conversation_id: conversationId, content, content_type: "text" },
   });
@@ -37,12 +33,12 @@ async function sendMessage(getToken: () => Promise<string | null>, conversationI
 
 export function useMessages(conversationId: string | null) {
   const qc = useQueryClient();
-  const { getToken: _getToken, isLoaded, isSignedIn } = useAuth();
+  const { getToken: _getToken, isLoaded, isSignedIn, sessionId } = useAuth();
   const getToken = () => _getToken();
   const query = useQuery({
     queryKey: ["messages", conversationId],
     queryFn: () => fetchMessages(getToken, conversationId!),
-    enabled: isLoaded && !!isSignedIn && !!conversationId,
+    enabled: isLoaded && !!isSignedIn && !!sessionId && !!conversationId,
   });
   const sendMutation = useMutation({
     mutationFn: ({ convId, content }: { convId: string; content: string }) => sendMessage(getToken, convId, content),

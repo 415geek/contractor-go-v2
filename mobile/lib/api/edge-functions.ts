@@ -1,6 +1,19 @@
+import { getClerkSessionTokenForEdge } from "@/lib/clerk-session-token";
 import { edgeFunctionClerkHeaders, edgeFunctionUrl, requireSupabasePublicEnv } from "@/lib/api/supabase-edge";
 
 type Envelope<T> = { data?: T; error?: string | null; message?: string };
+
+/**
+ * 从 Clerk `getToken` 取会话 JWT（含 Web 端短暂重试）后调用 Edge。
+ */
+export async function invokeEdgeWithClerkFromAuth<T>(
+  getToken: () => Promise<string | null>,
+  functionName: string,
+  init: { method?: string; body?: unknown } = {},
+): Promise<T> {
+  const clerkJwt = await getClerkSessionTokenForEdge(getToken);
+  return invokeEdgeWithClerk<T>(functionName, clerkJwt, init);
+}
 
 /**
  * 使用 Clerk JWT 调用 Edge Function（Web 必须同时带 apikey，否则网关/invoke 易失败）。

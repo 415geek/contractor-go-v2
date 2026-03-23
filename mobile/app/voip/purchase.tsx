@@ -27,7 +27,14 @@ function subtitleForRow(item: Row): string {
 
 export default function VoipPurchaseScreen() {
   const router = useRouter();
-  const { searchAvailable, searchLoading, searchError, purchase, purchaseLoading } = useVirtualNumbers();
+  const {
+    searchAvailable,
+    searchLoading,
+    searchError,
+    purchase,
+    purchaseLoading,
+    sessionReady,
+  } = useVirtualNumbers();
   const [rows, setRows] = useState<Row[]>([]);
   const [areaCode, setAreaCode] = useState("");
   const [lastSearchedCode, setLastSearchedCode] = useState<string | null>(null);
@@ -87,6 +94,13 @@ export default function VoipPurchaseScreen() {
 
   const handlePurchase = (did: string, monthly: string, setup: string) => {
     setPurchaseErr(null);
+    if (!sessionReady) {
+      setBanner({
+        kind: "error",
+        text: "登录会话仍在加载，请稍等 1～2 秒后再点「购买」；若反复出现请刷新页面。",
+      });
+      return;
+    }
     setConfirmDid({ did, monthly, setup });
   };
 
@@ -102,7 +116,11 @@ export default function VoipPurchaseScreen() {
       setConfirmDid(null);
       router.replace("/voip");
     } catch (e) {
-      const m = errMsg(e);
+      let m = errMsg(e);
+      if (/invalid or missing token/i.test(m)) {
+        m =
+          "身份校验失败。请确认：1）Supabase Edge Functions Secrets 已配置 CLERK_SECRET_KEY（与当前 Clerk 应用一致）；2）网站与 Clerk 同为正式(live)或同为测试(test)；3）刷新后重试。";
+      }
       setPurchaseErr(m);
       alertNative("购买失败", m);
     }
@@ -215,14 +233,14 @@ export default function VoipPurchaseScreen() {
                 <Text className="text-white">取消</Text>
               </Pressable>
               <Pressable
-                onPress={confirmPurchase}
-                disabled={purchaseLoading}
-                className="flex-1 bg-blue-600 py-3 rounded-lg items-center"
+                onPress={() => void confirmPurchase()}
+                disabled={purchaseLoading || !sessionReady}
+                className={`flex-1 py-3 rounded-lg items-center ${purchaseLoading || !sessionReady ? "bg-blue-600/50" : "bg-blue-600"}`}
               >
                 {purchaseLoading ? (
                   <ActivityIndicator size="small" color="white" />
                 ) : (
-                  <Text className="text-white font-medium">确认</Text>
+                  <Text className="text-white font-medium">{sessionReady ? "确认" : "登录就绪中…"}</Text>
                 )}
               </Pressable>
             </View>

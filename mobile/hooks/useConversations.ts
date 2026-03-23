@@ -1,7 +1,7 @@
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { invokeEdgeWithClerk } from "@/lib/api/edge-functions";
+import { invokeEdgeWithClerkFromAuth } from "@/lib/api/edge-functions";
 
 export type Conversation = {
   id: string;
@@ -15,9 +15,7 @@ export type Conversation = {
 };
 
 async function fetchConversations(getToken: () => Promise<string | null>): Promise<Conversation[]> {
-  const token = await getToken();
-  if (!token) throw new Error("Not authenticated");
-  return invokeEdgeWithClerk<Conversation[]>("get-conversations", token, { method: "GET" });
+  return invokeEdgeWithClerkFromAuth<Conversation[]>(getToken, "get-conversations", { method: "GET" });
 }
 
 async function createConversation(
@@ -25,9 +23,10 @@ async function createConversation(
   _userId: string,
   params: { contact_phone: string; contact_name?: string; virtual_number_id?: string },
 ): Promise<Conversation> {
-  const token = await getToken();
-  if (!token) throw new Error("Not authenticated");
-  const data = await invokeEdgeWithClerk<Conversation>("create-conversation", token, { method: "POST", body: params });
+  const data = await invokeEdgeWithClerkFromAuth<Conversation>(getToken, "create-conversation", {
+    method: "POST",
+    body: params,
+  });
   if (!data) throw new Error("未返回对话数据");
   return data;
 }

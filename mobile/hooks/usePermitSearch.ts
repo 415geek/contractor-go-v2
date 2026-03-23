@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-expo";
 
 import { searchPermitViaEdge, type PermitSearchApiResult } from "@/lib/api/permit-search";
+import { getClerkSessionTokenForEdge } from "@/lib/clerk-session-token";
 
 export type PropertyInfo = {
   lot_size_sqft?: number;
@@ -55,8 +56,7 @@ export function usePermitSearch() {
     setError(null);
     setResult(null);
     try {
-      const token = await getToken();
-      if (!token) throw new Error("Not authenticated");
+      const token = await getClerkSessionTokenForEdge(getToken);
       const data = await searchPermitViaEdge(token, trimmed);
       setResult(normalizeResult(data));
     } catch (e) {

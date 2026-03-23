@@ -16,6 +16,7 @@ import { useFocusEffect } from "@react-navigation/native";
 
 import { useMeProfile } from "@/hooks/useMeProfile";
 import { createStripeCheckoutSession } from "@/lib/api/stripe-checkout";
+import { getClerkSessionTokenForEdge } from "@/lib/clerk-session-token";
 import { pushPath } from "@/lib/web-navigation";
 
 function formatSeconds(sec: number): string {
@@ -46,8 +47,7 @@ export default function SubscriptionScreen() {
   const openStripeCheckout = async () => {
     setCheckoutBusy(true);
     try {
-      const token = await getToken();
-      if (!token) return;
+      const token = await getClerkSessionTokenForEdge(getToken);
       const successUrl = Linking.createURL("/subscription", { queryParams: { checkout: "success" } });
       const cancelUrl = Linking.createURL("/subscription", { queryParams: { checkout: "cancel" } });
       const { url } = await createStripeCheckoutSession(token, {

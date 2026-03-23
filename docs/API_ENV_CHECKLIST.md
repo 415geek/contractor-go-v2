@@ -20,8 +20,8 @@
 | `TELNYX_MESSAGING_PROFILE_ID` | 订购时绑定 Messaging Profile（推荐） | 可选 |
 | `TELNYX_CONNECTION_ID` | 订购时绑定语音 Connection | 可选 |
 | `SOCRATA_APP_TOKEN` | Permit 查询走 SF DataSF（Socrata）时可选，提高 API 限额 | 可选 |
-| `CLERK_SECRET_KEY` | Edge `get-user` 内 `verifyToken`（兼容 Clerk JWE Session；会拉 JWKS） | 生产 Session 为 JWE 时**二选一** |
-| `CLERK_JWT_KEY` | Clerk Dashboard → API Keys → **JWT verification key**（PEM）；`verifyToken({ jwtKey })`，Edge 上**无网络**拉 JWKS | 与上一行**二选一**（推荐冷启动更快的 Edge） |
+| `CLERK_SECRET_KEY` | Edge `get-user` 内 `verifyToken`（兼容 Clerk JWE Session；会拉 JWKS） | **未配置时**，消息/项目/购号等凡需登录的接口一律 **401 `Invalid or missing token`** |
+| `CLERK_JWT_KEY` | Clerk Dashboard → API Keys → **JWT verification key**（PEM）；`verifyToken({ jwtKey })`，Edge 上**无网络**拉 JWKS | 与 `CLERK_SECRET_KEY` **二选一**（推荐冷启动更快的 Edge） |
 | `CLERK_AUTHORIZED_PARTIES` | 逗号分隔的前端来源，如 `https://www.contractorgo.io,https://contractorgo.io`；传给 `verifyToken` 的 `authorizedParties` | 若校验 session 报 azp/来源相关错误时再配 |
 
 ## 用户端 Web（Vercel 环境变量）
@@ -54,7 +54,7 @@
 | 发消息 | send-message | TELNYX_API_KEY, translate |
 | 虚拟号码列表 | voip-my-numbers | - |
 | 搜索号码 | voip-available-numbers | TELNYX_API_KEY；`bay_area` / `state` / `area_code` / `state`+`ratecenter` |
-| 购买号码 | voip-purchase-number | TELNYX_API_KEY；可选 TELNYX_MESSAGING_PROFILE_ID |
+| 购买号码 | voip-purchase-number | **CLERK_SECRET_KEY** 或 **CLERK_JWT_KEY**（校验购号用户 Session）；TELNYX_*；缺 Clerk 密钥时前端会报 `Invalid or missing token` |
 | 项目 CRUD | projects | - |
 | 项目解析（语音/文字） | parse-project | `OPENAI_API_KEY`（文字/结构化用 Chat；语音另需 Whisper 同 key） |
 | 生成计划 | generate-plan | `OPENAI_API_KEY` |

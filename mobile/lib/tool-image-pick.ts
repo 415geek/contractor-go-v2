@@ -3,6 +3,7 @@ import * as ImagePicker from "expo-image-picker";
 
 import { alertCrossPlatform } from "@/lib/alert-cross-platform";
 import { uploadToolImageViaEdge, type UploadToolImageKind } from "@/lib/api/upload-tool-image";
+import { getClerkSessionTokenForEdge } from "@/lib/clerk-session-token";
 import { imageUriToBase64 } from "@/lib/image-base64";
 import { launchImageLibraryWeb, shouldUseWebFilePicker } from "@/lib/launch-image-library-web";
 
@@ -47,8 +48,7 @@ export async function uploadPickedImage(
   asset: ImagePickerAsset,
   kind: UploadToolImageKind,
 ): Promise<{ publicUrl: string }> {
-  const token = await getToken();
-  if (!token) throw new Error("请先登录");
+  const token = await getClerkSessionTokenForEdge(getToken);
   const ext = uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
   const safeExt = ext.length > 5 ? "jpg" : ext;
   const fileName = kind === "estimate" ? `estimate.${safeExt}` : `photo.${safeExt}`;

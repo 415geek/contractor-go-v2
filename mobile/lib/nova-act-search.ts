@@ -1,4 +1,5 @@
 import { edgeFunctionClerkHeaders, edgeFunctionUrl, requireSupabasePublicEnv } from "@/lib/api/supabase-edge";
+import { getClerkSessionTokenForEdge } from "@/lib/clerk-session-token";
 
 export type MaterialSearchHit = {
   product_name: string;
@@ -26,8 +27,7 @@ export async function searchMaterialPrices(
   getToken: () => Promise<string | null>,
   payload: MaterialSearchPayload,
 ): Promise<MaterialSearchResponse> {
-  const token = await getToken();
-  if (!token) throw new Error("Not authenticated");
+  const token = await getClerkSessionTokenForEdge(getToken);
   const { url, anonKey } = requireSupabasePublicEnv();
   const res = await fetch(edgeFunctionUrl(url, "search-material"), {
     method: "POST",

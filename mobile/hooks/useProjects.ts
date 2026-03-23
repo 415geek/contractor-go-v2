@@ -1,7 +1,7 @@
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { invokeEdgeWithClerk } from "@/lib/api/edge-functions";
+import { invokeEdgeWithClerkFromAuth } from "@/lib/api/edge-functions";
 
 export type ProjectStatus = "planning" | "active" | "on_hold" | "completed" | "cancelled";
 
@@ -50,9 +50,7 @@ async function invokeProjects<T>(
   getToken: () => Promise<string | null>,
   body: Record<string, unknown>,
 ): Promise<T> {
-  const token = await getToken();
-  if (!token) throw new Error("Not authenticated");
-  return invokeEdgeWithClerk<T>("projects", token, { method: "POST", body });
+  return invokeEdgeWithClerkFromAuth<T>(getToken, "projects", { method: "POST", body });
 }
 
 async function getProjects(getToken: () => Promise<string | null>, _userId: string, status?: ProjectStatus): Promise<Project[]> {
@@ -83,13 +81,14 @@ async function deleteProject(getToken: () => Promise<string | null>, _userId: st
 
 export function useProjects(status?: ProjectStatus) {
   const qc = useQueryClient();
-  const { getToken: _getToken, isLoaded, isSignedIn } = useAuth();
+  const { getToken: _getToken, isLoaded, isSignedIn, sessionId } = useAuth();
   const getToken = () => _getToken();
   const { user } = useUser();
+  const sessionReady = isLoaded && !!isSignedIn && !!sessionId && !!user?.id;
   const query = useQuery({
     queryKey: ["projects", status ?? "all"],
     queryFn: () => getProjects(getToken, user?.id ?? "", status),
-    enabled: isLoaded && !!isSignedIn && !!user?.id,
+    enabled: sessionReady,
   });
   const createMutation = useMutation({
     mutationFn: (row: ProjectInsert) => createProject(getToken, user!.id, row),
@@ -124,13 +123,14 @@ export function useProjects(status?: ProjectStatus) {
 }
 
 export function useProject(id: string | undefined) {
-  const { getToken: _getToken, isLoaded, isSignedIn } = useAuth();
+  const { getToken: _getToken, isLoaded, isSignedIn, sessionId } = useAuth();
   const getToken = () => _getToken();
   const { user } = useUser();
+  const sessionReady = isLoaded && !!isSignedIn && !!sessionId && !!user?.id;
   const query = useQuery({
     queryKey: ["project", id],
     queryFn: () => (id ? getProject(getToken, user?.id ?? "", id) : Promise.resolve(null)),
-    enabled: isLoaded && !!isSignedIn && !!user?.id && !!id,
+    enabled: sessionReady && !!id,
   });
   return {
     project: query.data ?? null,

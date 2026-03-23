@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/clerk-expo";
 
+import { invokeEdgeWithClerkFromAuth } from "@/lib/api/edge-functions";
 import { fetchAvailableNumbers, purchaseVoipNumber } from "@/lib/api/voip";
-import { invokeEdgeWithClerk } from "@/lib/api/edge-functions";
+import { getClerkSessionTokenForEdge } from "@/lib/clerk-session-token";
 import { ME_PROFILE_QUERY_KEY } from "@/hooks/useMeProfile";
 
 export type VirtualNumber = {
@@ -24,9 +25,7 @@ export type AvailableDid = {
 };
 
 async function fetchMyNumbers(getToken: () => Promise<string | null>): Promise<VirtualNumber[]> {
-  const token = await getToken();
-  if (!token) throw new Error("Not authenticated");
-  return invokeEdgeWithClerk<VirtualNumber[]>("voip-my-numbers", token, { method: "GET" });
+  return invokeEdgeWithClerkFromAuth<VirtualNumber[]>(getToken, "voip-my-numbers", { method: "GET" });
 }
 
 async function searchAvailableNumbers(params: { area_code?: string; state?: string; ratecenter?: string }): Promise<AvailableDid[]> {
@@ -39,19 +38,19 @@ async function purchaseNumber(
   monthly?: string,
   setup?: string,
 ): Promise<VirtualNumber> {
-  const token = await getToken();
-  if (!token) throw new Error("Not authenticated");
+  const token = await getClerkSessionTokenForEdge(getToken);
   return purchaseVoipNumber(token, { did, monthly, setup }) as VirtualNumber;
 }
 
 export function useVirtualNumbers() {
   const qc = useQueryClient();
-  const { getToken: _getToken, isLoaded, isSignedIn } = useAuth();
+  const { getToken: _getToken, isLoaded, isSignedIn, sessionId } = useAuth();
   const getToken = () => _getToken();
+  const sessionReady = isLoaded && !!isSignedIn && !!sessionId;
   const query = useQuery({
     queryKey: ["virtualNumbers"],
     queryFn: () => fetchMyNumbers(getToken),
-    enabled: isLoaded && !!isSignedIn,
+    enabled: sessionReady,
   });
   const searchMutation = useMutation({
     mutationFn: searchAvailableNumbers,
@@ -75,5 +74,7 @@ export function useVirtualNumbers() {
     purchase: purchaseMutation.mutateAsync,
     purchaseLoading: purchaseMutation.isPending,
     purchaseError: purchaseMutation.error,
+    /** Web 上购号前应等待为 true，避免 getToken 尚未可用 */
+    sessionReady,
   };
 }
