@@ -4,6 +4,7 @@ import { View, Text, FlatList, Pressable, RefreshControl, ActivityIndicator } fr
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useConversations } from "@/hooks/useConversations";
+import { useVirtualNumbers } from "@/hooks/useVirtualNumbers";
 import { pushPath } from "@/lib/web-navigation";
 
 const LANG_MAP: Record<string, string> = {
@@ -48,6 +49,8 @@ function getAvatarColor(name: string): string {
 export default function MessagesIndexScreen() {
   const router = useRouter();
   const { conversations, isLoading, error, refetch } = useConversations();
+  const { numbers: virtualNumbers, sessionReady: vnSessionReady } = useVirtualNumbers();
+  const hasVirtualNumber = vnSessionReady && virtualNumbers.length > 0;
 
   if (isLoading && conversations.length === 0) {
     return (
@@ -71,14 +74,14 @@ export default function MessagesIndexScreen() {
         </Pressable>
       </View>
 
-      {/* 虚拟号码条 */}
+      {/* 虚拟号码条：有号时强调「管理」；无号时引导购买 */}
       <Pressable
         onPress={() => pushPath("/voip")}
         className="mx-4 mb-3 rounded-xl bg-primary-500 px-4 py-3 flex-row items-center active:bg-primary-600 shadow-button"
       >
         <Ionicons name="call" size={18} color="white" />
         <Text className="flex-1 ml-2.5 text-sm font-medium text-white">
-          获取虚拟号码，开始接单
+          {hasVirtualNumber ? "虚拟号码已开通 · 点此查看与管理" : "获取虚拟号码，开始接单"}
         </Text>
         <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.7)" />
       </Pressable>
@@ -98,14 +101,25 @@ export default function MessagesIndexScreen() {
           </View>
           <Text className="text-ink text-lg font-semibold text-center">还没有对话</Text>
           <Text className="text-ink-secondary text-sm text-center mt-2 leading-relaxed">
-            购买虚拟号码后，{"\n"}客户的消息会出现在这里
+            {hasVirtualNumber
+              ? "有号码不会自动出现对话。请点右下角「+」输入客户手机号主动联系；或让客户先发短信到你的虚拟号码，来信后会出现在此列表。"
+              : "购买虚拟号码后，客户发来的消息会出现在这里。"}
           </Text>
-          <Pressable
-            onPress={() => pushPath("/voip")}
-            className="mt-6 bg-primary-500 rounded-xl px-6 py-3.5 active:bg-primary-600 shadow-button"
-          >
-            <Text className="text-white font-semibold">获取虚拟号码</Text>
-          </Pressable>
+          {hasVirtualNumber ? (
+            <Pressable
+              onPress={() => router.push("/conversation/new" as never)}
+              className="mt-6 bg-electric-500 rounded-xl px-6 py-3.5 active:bg-electric-600 shadow-button"
+            >
+              <Text className="text-white font-semibold">新建对话（发短信）</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={() => pushPath("/voip")}
+              className="mt-6 bg-primary-500 rounded-xl px-6 py-3.5 active:bg-primary-600 shadow-button"
+            >
+              <Text className="text-white font-semibold">获取虚拟号码</Text>
+            </Pressable>
+          )}
         </View>
       ) : (
         <FlatList

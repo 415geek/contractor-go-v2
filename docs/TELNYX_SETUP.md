@@ -48,3 +48,7 @@ supabase functions deploy voip-available-numbers voip-rate-centers voip-purchase
 
 - 若多人/多环境共用同一个 `TELNYX_API_KEY`，**任一环境先下单**都可能占满 Telnyx 侧额度，其他人会收到该英文报错，且 **App 内「我的号码」仍为空**（因为订单未成功完成、未写入 `virtual_numbers`）。
 - 处理：在 [Telnyx Portal](https://portal.telnyx.com/) 升级套餐、使用生产专用 Key，或释放/完成已有号码订单；详见官方 [upgrade](https://telnyx.com/upgrade) 与计费说明。
+
+## 7. SaaS 模式：单账号 API vs Managed Accounts（Reseller）
+
+若需理解 **「普通 API」与「类经销商子账号」**、以及 **何时上 Managed Accounts**，见 **[TELNYX_SAAS_ARCHITECTURE.md](./TELNYX_SAAS_ARCHITECTURE.md)**。
