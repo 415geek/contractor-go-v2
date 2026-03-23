@@ -8,6 +8,14 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ActivityIndicator, Platform, Text, View } from "react-native";
+
+/** Web：class 策略下为根节点加上 `dark`，与 tailwind `darkMode: "class"` 一致，避免 css-interop 初始化报错 */
+function useWebDarkRootClass() {
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    document.documentElement.classList.add("dark");
+  }, []);
+}
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
@@ -73,6 +81,8 @@ function RootNavigator() {
 const clerkKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 export default function RootLayout() {
+  useWebDarkRootClass();
+
   if (!clerkKey?.trim()) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.bg, padding: 24, justifyContent: "center" }}>

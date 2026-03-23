@@ -1,5 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // Web：与 NativeWind / react-native-css-interop 一致；避免默认 `media` 下触发
+  // “Cannot manually set color scheme, as dark mode is type 'media'”
+  // @see https://tailwindcss.com/docs/dark-mode#toggling-dark-mode-manually
+  darkMode: "class",
   presets: [require("nativewind/preset")],
   content: [
     "./app/**/*.{ts,tsx}",
