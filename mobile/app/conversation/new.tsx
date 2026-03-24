@@ -1,5 +1,5 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -30,11 +30,23 @@ function normalizePhone(p: string): string {
  */
 export default function NewConversationScreen() {
   const router = useRouter();
+  const { phone: phoneParam } = useLocalSearchParams<{ phone?: string }>();
   const insets = useSafeAreaInsets();
   const { createConversation, createLoading } = useConversations();
   const { numbers } = useVirtualNumbers();
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
+
+  useEffect(() => {
+    const raw = typeof phoneParam === "string" ? phoneParam : Array.isArray(phoneParam) ? phoneParam[0] : "";
+    if (raw) {
+      try {
+        setPhone(decodeURIComponent(raw));
+      } catch {
+        setPhone(raw);
+      }
+    }
+  }, [phoneParam]);
 
   const handleCreate = async () => {
     const p = normalizePhone(phone.trim());

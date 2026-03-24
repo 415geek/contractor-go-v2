@@ -1,8 +1,9 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { View, FlatList, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { View, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 
 import { ChatInput } from "@/components/chat/ChatInput";
+import { alertCrossPlatform } from "@/lib/alert-cross-platform";
 import { IOSConversationHeader } from "@/components/chat/IOSConversationHeader";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { useMessages } from "@/hooks/useMessages";
@@ -37,7 +38,8 @@ export default function ConversationScreen() {
       await sendMessage({ convId: id, content });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      Alert.alert("未能发送", msg);
+      alertCrossPlatform("未能发送", msg);
+      throw e;
     }
   };
 
@@ -75,6 +77,7 @@ export default function ConversationScreen() {
               content={item.original_content ?? ""}
               translatedContent={item.translated_content}
               createdAt={item.created_at}
+              status={item.status}
             />
           )}
         />

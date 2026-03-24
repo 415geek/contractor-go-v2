@@ -33,8 +33,12 @@ export function ChatInput({ onSend, disabled, sourceLang = "zh-CN", targetLang =
   const handleSend = async () => {
     const t = text.trim();
     if (!t || disabled) return;
-    setText("");
-    await onSend(t);
+    try {
+      await onSend(t);
+      setText("");
+    } catch {
+      /* 错误由上层 alert；保留输入内容 */
+    }
   };
 
   const handleVoiceRelease = async () => {

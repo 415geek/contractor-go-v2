@@ -7,6 +7,8 @@ type MessageBubbleProps = {
   content: string;
   translatedContent?: string | null;
   createdAt: string;
+  /** outbound 乐观更新时为 sending */
+  status?: string;
 };
 
 function formatTime(iso: string) {
@@ -17,7 +19,8 @@ function formatTime(iso: string) {
 /**
  * iOS「信息」式气泡：发出右对齐蓝底，收到左对齐灰底；译文与原文分层展示。
  */
-export function MessageBubble({ isSent, content, translatedContent, createdAt }: MessageBubbleProps) {
+export function MessageBubble({ isSent, content, translatedContent, createdAt, status }: MessageBubbleProps) {
+  const pending = status === "sending";
   const mainText = isSent ? translatedContent || content : translatedContent || content;
   const subText = isSent
     ? translatedContent && translatedContent !== content
@@ -34,6 +37,7 @@ export function MessageBubble({ isSent, content, translatedContent, createdAt }:
           borderRadius: iosComm.bubbleRadius,
           paddingHorizontal: 14,
           paddingVertical: 8,
+          opacity: pending ? 0.88 : 1,
           backgroundColor: isSent ? iosComm.bubbleSent : iosComm.bubbleReceived,
           ...(isSent
             ? { borderBottomRightRadius: 4 }
@@ -60,6 +64,7 @@ export function MessageBubble({ isSent, content, translatedContent, createdAt }:
           textAlign: isSent ? "right" : "left",
         }}
       >
+        {pending ? "发送中… " : ""}
         {formatTime(createdAt)}
       </Text>
     </View>

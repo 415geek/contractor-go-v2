@@ -86,11 +86,16 @@ Deno.serve(async (req) => {
 
     let fromDid: string;
     if (vnId) {
-      const { data: vn } = await admin.from("virtual_numbers").select("phone_number").eq("id", vnId).single();
-      fromDid = (vn as { phone_number?: string })?.phone_number ?? "";
+      const { data: vn } = await admin.from("virtual_numbers").select("phone_number").eq("id", vnId).maybeSingle();
+      fromDid = (vn as { phone_number?: string } | null)?.phone_number ?? "";
     } else {
-      const { data: vn } = await admin.from("virtual_numbers").select("phone_number").eq("user_id", user.id).limit(1).single();
-      fromDid = (vn as { phone_number?: string })?.phone_number ?? "";
+      const { data: vn } = await admin
+        .from("virtual_numbers")
+        .select("phone_number")
+        .eq("user_id", user.id)
+        .limit(1)
+        .maybeSingle();
+      fromDid = (vn as { phone_number?: string } | null)?.phone_number ?? "";
     }
 
     if (!fromDid || !contactPhone) {

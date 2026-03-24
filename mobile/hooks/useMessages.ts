@@ -15,6 +15,19 @@ export type Message = {
   created_at: string;
 };
 
+function optimisticOutbound(convId: string, content: string): Message {
+  return {
+    id: `optimistic-${Date.now()}`,
+    conversation_id: convId,
+    direction: "outbound",
+    message_type: "text",
+    original_content: content,
+    translated_content: null,
+    status: "sending",
+    created_at: new Date().toISOString(),
+  };
+}
+
 async function fetchMessages(getToken: () => Promise<string | null>, conversationId: string): Promise<Message[]> {
   return invokeEdgeWithClerkFromAuth<Message[]>(getToken, "get-messages", {
     method: "POST",
@@ -42,16 +55,28 @@ export function useMessages(conversationId: string | null) {
   });
   const sendMutation = useMutation({
     mutationFn: ({ convId, content }: { convId: string; content: string }) => sendMessage(getToken, convId, content),
+    onMutate: async ({ convId, content }) => {
+      await qc.cancelQueries({ queryKey: ["messages", convId] });
+      const previous = qc.getQueryData<Message[]>(["messages", convId]);
+      const opt = optimisticOutbound(convId, content);
+      qc.setQueryData<Message[]>(["messages", convId], [...(previous ?? []), opt]);
+      return { previous, convId };
+    },
+    onError: (_err, { convId }, context) => {
+      if (context?.previous !== undefined) {
+        qc.setQueryData(["messages", convId], context.previous);
+      }
+    },
     onSuccess: (_, { convId }) => {
       qc.invalidateQueries({ queryKey: ["messages", convId] });
       qc.invalidateQueries({ queryKey: ["conversations"] });
     },
   });
 
-  // 轮询刷新消息（Realtime 需 Clerk JWT，易触发 "No suitable key"，改用轮询）
+  // 轮询：收对方短信与入站 Webhook 写入（无 Realtime 时依赖刷新）
   useEffect(() => {
     if (!conversationId) return;
-    const interval = setInterval(() => qc.invalidateQueries({ queryKey: ["messages", conversationId] }), 10000);
+    const interval = setInterval(() => qc.invalidateQueries({ queryKey: ["messages", conversationId] }), 4000);
     return () => clearInterval(interval);
   }, [conversationId, qc]);
 
