@@ -153,8 +153,6 @@ Deno.serve(async (req) => {
       })
       .select()
       .single();
-      .select()
-      .single();
 
     if (msgErr) {
       return jsonResponse({ data: null, error: "db_error", message: msgErr.message }, 500);
