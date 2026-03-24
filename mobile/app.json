@@ -36,7 +36,10 @@
         {
           "motionPermission": "用于水平仪：读取重力方向以显示倾角。"
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
