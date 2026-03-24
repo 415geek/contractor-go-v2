@@ -1,0 +1,26 @@
+{
+  "date": "2026-03-24",
+  "url": "https://www.contractorgo.io",
+  "healthScore": 82,
+  "issues": [
+    {
+      "id": "ISSUE-001",
+      "title": "Web console Animated useNativeDriver error on landing",
+      "severity": "medium",
+      "category": "console"
+    },
+    {
+      "id": "ISSUE-002",
+      "title": "Tool subpages bottom content vs tab bar overlap on web",
+      "severity": "medium",
+      "category": "visual"
+    },
+    {
+      "id": "ISSUE-003",
+      "title": "Possible ghost text behind home tab bar (needs PNG verify)",
+      "severity": "low",
+      "category": "visual"
+    }
+  ],
+  "notes": "Privacy /privacy verified OK on prod this run. Fixes landed in commits d46d775, 3c81dfe."
+}
