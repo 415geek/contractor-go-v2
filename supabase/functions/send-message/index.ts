@@ -141,6 +141,7 @@ Deno.serve(async (req) => {
         user_id: user.id,
         direction: "outbound",
         message_type: "text",
+        body: content,
         original_content: content,
         translated_content: translated,
         original_language: userLang,
