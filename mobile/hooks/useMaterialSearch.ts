@@ -1,11 +1,8 @@
-import { useState, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-expo";
+import { useCallback, useState } from "react";
 
-import {
-  searchMaterialPrices,
-  type MaterialSearchHit,
-  type MaterialSearchResponse,
-} from "@/lib/nova-act-search";
+import { searchMaterialPrices } from "@/lib/nova-act-search";
+import type { MaterialSearchResponse } from "@/lib/nova-act-search";
 
 type MaterialSearchState = {
   isSearching: boolean;
@@ -22,12 +19,13 @@ export function useMaterialSearch() {
   });
 
   const searchMaterial = useCallback(
-    async (imageUrls: string[], description?: string) => {
+    async (imageUrls: string[], description?: string, searchKeywords?: string[]) => {
       setState((s) => ({ ...s, isSearching: true, error: null }));
       try {
         const results = await searchMaterialPrices(getToken, {
           image_urls: imageUrls.length > 0 ? imageUrls : undefined,
           description: description || undefined,
+          search_keywords: searchKeywords && searchKeywords.length > 0 ? searchKeywords : undefined,
         });
         setState({ isSearching: false, results, error: null });
         return results;
@@ -40,8 +38,9 @@ export function useMaterialSearch() {
     [getToken],
   );
 
-  const retry = useCallback(() => {
-    setState((s) => ({ ...s, error: null, results: null }));
+  /** 清空结果与错误，保留表单（材料不对时重新搜） */
+  const clearResults = useCallback(() => {
+    setState({ isSearching: false, results: null, error: null });
   }, []);
 
   return {
@@ -49,8 +48,8 @@ export function useMaterialSearch() {
     isSearching: state.isSearching,
     results: state.results,
     error: state.error,
-    retry,
+    clearResults,
   };
 }
 
-export type { MaterialSearchHit, MaterialSearchResponse };
+export type { MaterialSearchHit, MaterialSearchResponse } from "@/lib/nova-act-search";
