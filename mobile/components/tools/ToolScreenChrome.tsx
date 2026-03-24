@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
@@ -53,5 +53,7 @@ export function useToolScrollBottomPadding(extra = 20) {
   const bottomPad = Math.max(insets.bottom, 10);
   const centerHomeBarTotal = 52 + bottomPad + 18;
   const tabH = Math.max(reported, centerHomeBarTotal);
-  return tabH + extra;
+  // Web：中间凸起首页按钮向上伸出（见 CenterHomeTabBar homeFab marginTop: -26），需额外留白
+  const webFabSlop = Platform.OS === "web" ? 28 : 0;
+  return tabH + extra + webFabSlop;
 }
