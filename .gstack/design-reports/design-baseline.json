@@ -1,0 +1,51 @@
+{
+  "date": "2026-03-24",
+  "url": "https://www.contractorgo.io",
+  "designScore": "B-",
+  "aiSlopScore": "C+",
+  "categoryGrades": {
+    "hierarchy": "B",
+    "typography": "B",
+    "spacing": "B-",
+    "color": "B",
+    "interaction": "B",
+    "responsive": "B-",
+    "content": "B",
+    "aiSlop": "C+",
+    "motion": null,
+    "performance": null
+  },
+  "findings": [
+    {
+      "id": "FINDING-001",
+      "title": "Production /privacy returns 404",
+      "impact": "high",
+      "category": "content"
+    },
+    {
+      "id": "FINDING-002",
+      "title": "Material price tool: tab bar overlaps form area",
+      "impact": "medium",
+      "category": "spacing"
+    },
+    {
+      "id": "FINDING-003",
+      "title": "Workbench three-color KPI cards read as generic template",
+      "impact": "medium",
+      "category": "aiSlop"
+    },
+    {
+      "id": "FINDING-004",
+      "title": "Landing hero card decorative circles/gradient",
+      "impact": "low",
+      "category": "aiSlop"
+    },
+    {
+      "id": "FINDING-005",
+      "title": "No PNG screenshots in repo from this run",
+      "impact": "polish",
+      "category": "process"
+    }
+  ],
+  "notes": "Audited via Cursor browser; gstack browse not built locally."
+}
