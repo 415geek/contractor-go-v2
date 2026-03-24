@@ -42,9 +42,16 @@ export function ToolScreenHeader({ title }: { title: string }) {
   );
 }
 
-/** 嵌在 Tab 内时，为 ScrollView 预留底部 Tab 栏 + 安全区，避免内容被遮挡 */
-export function useToolScrollBottomPadding(extra = 16) {
-  const tabH = useBottomTabBarHeight();
+/**
+ * 嵌在 Tab 内时，为 ScrollView 预留底部空间。
+ * `CenterHomeTabBar` 未在 `tabBarStyle` 写死高度时，`useBottomTabBarHeight()` 常偏小（尤其 Web），
+ * 会导致表单最后一行被 Tab / 中间凸起首页按钮挡住；此处与 `CenterHomeTabBar` 的 wrapper 高度对齐。
+ */
+export function useToolScrollBottomPadding(extra = 20) {
+  const reported = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
-  return tabH + Math.max(insets.bottom, 8) + extra;
+  const bottomPad = Math.max(insets.bottom, 10);
+  const centerHomeBarTotal = 52 + bottomPad + 18;
+  const tabH = Math.max(reported, centerHomeBarTotal);
+  return tabH + extra;
 }

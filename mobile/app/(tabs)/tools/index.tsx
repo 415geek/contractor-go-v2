@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
+import { useToolScrollBottomPadding } from "@/components/tools/ToolScreenChrome";
 import { pushPath } from "@/lib/web-navigation";
 
 type Tool = {
@@ -99,7 +99,7 @@ function ToolCard({ tool }: { tool: Tool }) {
 }
 
 export default function ToolsHubScreen() {
-  const tabBarH = useBottomTabBarHeight();
+  const scrollBottomPad = useToolScrollBottomPadding();
 
   const rows: Tool[][] = [];
   for (let i = 0; i < TOOLS.length; i += 2) {
@@ -114,7 +114,7 @@ export default function ToolsHubScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: tabBarH + 28 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: scrollBottomPad }}
         showsVerticalScrollIndicator={false}
       >
         {rows.map((row, rowIdx) => (
