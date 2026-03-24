@@ -23,6 +23,12 @@ begin
     if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'messages' and column_name = 'message_type') then
       alter table public.messages add column message_type text default 'text';
     end if;
+    if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'messages' and column_name = 'original_language') then
+      alter table public.messages add column original_language text;
+    end if;
+    if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'messages' and column_name = 'translated_language') then
+      alter table public.messages add column translated_language text;
+    end if;
   end if;
 
   if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'users') then
