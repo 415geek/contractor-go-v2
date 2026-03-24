@@ -16,7 +16,7 @@ type ChatInputProps = {
 
 export function ChatInput({ onSend, disabled, sourceLang = "zh-CN", targetLang = "en-US" }: ChatInputProps) {
   const [text, setText] = useState("");
-  const { translatedText, isTranslating } = useRealtimeTranslation({
+  const { translatedText, isTranslating, error: translateError } = useRealtimeTranslation({
     text,
     sourceLang,
     targetLang,
@@ -43,7 +43,11 @@ export function ChatInput({ onSend, disabled, sourceLang = "zh-CN", targetLang =
       {text.trim() && (
         <View className="mb-2 px-2">
           <Text className="text-ink-tertiary text-xs">翻译预览</Text>
-          <Text className="text-ink text-sm">{isTranslating ? "..." : translatedText || "-"}</Text>
+          {translateError ? (
+            <Text className="text-red-400 text-sm">{translateError.message}</Text>
+          ) : (
+            <Text className="text-ink text-sm">{isTranslating ? "..." : translatedText || "-"}</Text>
+          )}
         </View>
       )}
       <View className="flex-row items-end gap-2">

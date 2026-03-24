@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, Pressable, ActivityIndicator, Alert } from "react-native";
 
 import { ChatInput } from "@/components/chat/ChatInput";
 import { MessageBubble } from "@/components/chat/MessageBubble";
@@ -29,7 +29,12 @@ export default function ConversationScreen() {
   if (!id) return null;
 
   const handleSend = async (content: string) => {
-    await sendMessage({ convId: id, content });
+    try {
+      await sendMessage({ convId: id, content });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      Alert.alert("发送失败", msg);
+    }
   };
 
   return (
