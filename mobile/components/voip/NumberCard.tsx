@@ -1,5 +1,7 @@
 import { View, Text, Pressable } from "react-native";
 
+import { iosComm } from "@/lib/ios-comm-theme";
+
 type NumberCardProps = {
   did: string;
   monthly?: string;
@@ -10,6 +12,9 @@ type NumberCardProps = {
   actionLabel?: string;
 };
 
+/**
+ * 类 iOS 分组列表中的号码行：圆角卡片 + 状态胶囊。
+ */
 export function NumberCard({
   did,
   monthly = "0",
@@ -18,30 +23,48 @@ export function NumberCard({
   onAction,
   actionLabel = "购买",
 }: NumberCardProps) {
-  const badgeColor =
-    status === "active" ? "bg-green-600" : status === "available" ? "bg-blue-600" : "bg-amber-500";
+  const badgeBg =
+    status === "active"
+      ? iosComm.systemGreen
+      : status === "available"
+        ? iosComm.systemBlue
+        : "#FF9F0A";
   return (
-    <View className="rounded-xl bg-gray-800 p-4 flex-row items-center justify-between">
+    <View
+      style={{
+        borderRadius: 12,
+        backgroundColor: iosComm.groupedSecondary,
+        padding: 16,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
+    >
       <View className="min-w-0 flex-1 pr-2">
-        <Text className="text-white font-mono text-lg">{did}</Text>
+        <Text style={{ color: iosComm.label, fontSize: 19 }}>{did}</Text>
         {subtitle ? (
-          <Text className="text-gray-500 text-xs mt-0.5" numberOfLines={2}>
+          <Text style={{ color: iosComm.secondaryLabel, fontSize: 13, marginTop: 4 }} numberOfLines={2}>
             {subtitle}
           </Text>
         ) : null}
-        <View className="flex-row items-center gap-2 mt-1">
-          <View className={`px-2 py-0.5 rounded ${badgeColor}`}>
-            <Text className="text-white text-xs">{status}</Text>
+        <View className="flex-row items-center gap-2 mt-2">
+          <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: badgeBg }}>
+            <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>{status}</Text>
           </View>
-          <Text className="text-gray-400 text-sm">${monthly}/月</Text>
+          <Text style={{ color: iosComm.secondaryLabel, fontSize: 15 }}>${monthly}/月</Text>
         </View>
       </View>
       {onAction && (
         <Pressable
           onPress={onAction}
-          className="bg-blue-600 px-4 py-2 rounded-lg active:opacity-80"
+          style={{
+            backgroundColor: iosComm.systemBlue,
+            paddingHorizontal: 16,
+            paddingVertical: 10,
+            borderRadius: 10,
+          }}
         >
-          <Text className="text-white font-medium">{actionLabel}</Text>
+          <Text style={{ color: "#fff", fontWeight: "600" }}>{actionLabel}</Text>
         </Pressable>
       )}
     </View>

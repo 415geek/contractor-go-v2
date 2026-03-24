@@ -6,6 +6,7 @@ import { VoipQuickNav } from "@/components/voip/VoipQuickNav";
 import { NumberCard } from "@/components/voip/NumberCard";
 import { useVirtualNumbers } from "@/hooks/useVirtualNumbers";
 import { useMeProfile } from "@/hooks/useMeProfile";
+import { iosComm } from "@/lib/ios-comm-theme";
 import { pushPath } from "@/lib/web-navigation";
 
 export default function VoipIndexScreen() {
@@ -15,67 +16,103 @@ export default function VoipIndexScreen() {
   const buyButton = (
     <Pressable
       onPress={() => pushPath("/voip/purchase")}
-      className="flex-row items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 active:opacity-80"
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+        borderRadius: 10,
+        backgroundColor: iosComm.systemBlue,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+      }}
     >
       <Ionicons name="add" size={18} color="white" />
-      <Text className="text-sm font-medium text-white">购买</Text>
+      <Text style={{ fontSize: 15, fontWeight: "600", color: "#fff" }}>购买</Text>
     </Pressable>
   );
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-gray-900">
-        <VoipHeader title="我的号码" right={buyButton} />
+      <View className="flex-1" style={{ backgroundColor: iosComm.bg }}>
+        <VoipHeader title="电话号码" right={buyButton} />
         <VoipQuickNav />
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#3B82F6" />
+          <ActivityIndicator size="large" color={iosComm.systemBlue} />
         </View>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-gray-900">
-      <VoipHeader title="我的号码" right={buyButton} />
+    <View className="flex-1" style={{ backgroundColor: iosComm.bg }}>
+      <VoipHeader title="电话号码" right={buyButton} />
       <VoipQuickNav />
       {me && !me.is_pro && (
         <Pressable
           onPress={() => pushPath("/subscription")}
-          className="mx-4 mt-3 rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-2.5"
+          style={{
+            marginHorizontal: 16,
+            marginTop: 12,
+            borderRadius: 10,
+            borderWidth: 0.33,
+            borderColor: "rgba(255, 159, 10, 0.45)",
+            backgroundColor: "rgba(255, 159, 10, 0.12)",
+            paddingHorizontal: 14,
+            paddingVertical: 12,
+          }}
         >
-          <Text className="text-amber-200 text-sm font-medium">免费体验额度</Text>
-          <Text className="text-amber-100/90 text-xs mt-1">
+          <Text style={{ color: "#FF9F0A", fontSize: 15, fontWeight: "600" }}>用量与订阅</Text>
+          <Text style={{ color: "rgba(255, 214, 170, 0.95)", fontSize: 13, marginTop: 4 }}>
             短信 {me.usage.sms_outbound_sent}/{me.usage.sms_outbound_limit ?? 50} · 升级 Pro 无限发送
           </Text>
         </Pressable>
       )}
       {error && (
-        <View className="p-4 bg-red-900/30 mx-4 mt-4 rounded-lg">
-          <Text className="text-red-400">{error instanceof Error ? error.message : (error as { message?: string })?.message ?? "Unknown error"}</Text>
+        <View style={{ margin: 16, padding: 12, borderRadius: 10, backgroundColor: "rgba(255, 69, 58, 0.12)" }}>
+          <Text style={{ color: "#FF453A" }}>
+            {error instanceof Error ? error.message : (error as { message?: string })?.message ?? "Unknown error"}
+          </Text>
         </View>
       )}
       {numbers.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
-          <Ionicons name="call-outline" size={64} color="#6B7280" />
-          <Text className="text-gray-400 text-center mt-4 text-lg">您还没有虚拟号码</Text>
-          <Text className="text-gray-500 text-center mt-2">
-            仅当购号在供应商侧成功并写入本应用后，才会显示在此。若购买页报错（例如 Telnyx 账号额度），此处会保持为空。
+          <View
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: iosComm.groupedSecondary,
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 16,
+            }}
+          >
+            <Ionicons name="call-outline" size={40} color={iosComm.secondaryLabel as string} />
+          </View>
+          <Text style={{ color: iosComm.label, fontSize: 20, fontWeight: "600", textAlign: "center" }}>
+            尚未添加号码
           </Text>
-          <Text className="text-gray-500 text-center mt-2 text-xs leading-5">
-            免费档说明：产品侧每位用户可绑定 1 个号码；与 Telnyx 控制台对「API Key 账号」的订购上限是两层限制，可能同时存在。
+          <Text style={{ color: iosComm.secondaryLabel, textAlign: "center", marginTop: 10, lineHeight: 22, fontSize: 15 }}>
+            购买成功后，号码会显示在这里，用于收发短信与通话（通话能力依供应商开通情况）。
           </Text>
           <Pressable
             onPress={() => pushPath("/voip/purchase")}
-            className="mt-6 bg-blue-600 px-6 py-3 rounded-lg"
+            style={{
+              marginTop: 24,
+              backgroundColor: iosComm.systemGreen,
+              paddingHorizontal: 28,
+              paddingVertical: 14,
+              borderRadius: 12,
+            }}
           >
-            <Text className="text-white font-medium">去购买号码</Text>
+            <Text style={{ color: "#fff", fontSize: 17, fontWeight: "600" }}>选取号码</Text>
           </Pressable>
         </View>
       ) : (
         <FlatList
           data={numbers}
           keyExtractor={(item) => item.id}
-          contentContainerClassName="p-4 gap-4"
+          contentContainerStyle={{ padding: 16, gap: 12 }}
           renderItem={({ item }) => (
             <NumberCard
               did={item.phone_number}

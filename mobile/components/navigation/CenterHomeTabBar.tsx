@@ -15,7 +15,7 @@ const TAB_META: Record<
   Exclude<TabName, "home">,
   { label: string; icon: keyof typeof Ionicons.glyphMap; iconActive: keyof typeof Ionicons.glyphMap }
 > = {
-  index: { label: "消息", icon: "chatbubble-ellipses-outline", iconActive: "chatbubble-ellipses" },
+  index: { label: "信息", icon: "chatbubble-ellipses-outline", iconActive: "chatbubble-ellipses" },
   projects: { label: "项目", icon: "briefcase-outline", iconActive: "briefcase" },
   tools: { label: "工具", icon: "construct-outline", iconActive: "construct" },
   profile: { label: "我的", icon: "person-outline", iconActive: "person" },

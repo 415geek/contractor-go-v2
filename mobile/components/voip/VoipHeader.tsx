@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { iosComm } from "@/lib/ios-comm-theme";
+
 type VoipHeaderProps = {
   title: string;
   /** 浏览器/路由无后退栈时的回退目标 */
@@ -12,8 +14,7 @@ type VoipHeaderProps = {
 };
 
 /**
- * VoIP 在根 Stack 下，无底部 Tab；提供与系统一致的后退与标题区。
- * Web 直接打开 /voip 时 history 可能为空，需 fallback 回主 Tab。
+ * 类 iOS「电话」子页导航：与信息模块统一的深色导航栏。
  */
 export function VoipHeader({ title, fallbackRoute = "/home", right }: VoipHeaderProps) {
   const router = useRouter();
@@ -29,8 +30,13 @@ export function VoipHeader({ title, fallbackRoute = "/home", right }: VoipHeader
 
   return (
     <View
-      className="border-b border-gray-800 bg-gray-900"
-      style={{ paddingTop: Math.max(insets.top, 6), paddingBottom: 8 }}
+      style={{
+        borderBottomWidth: 0.33,
+        borderBottomColor: iosComm.navSeparator,
+        backgroundColor: iosComm.bg,
+        paddingTop: Math.max(insets.top, 6),
+        paddingBottom: 10,
+      }}
     >
       <View className="min-h-11 flex-row items-center px-2">
         <Pressable
@@ -40,10 +46,11 @@ export function VoipHeader({ title, fallbackRoute = "/home", right }: VoipHeader
           accessibilityLabel="返回"
           className="h-11 w-11 shrink-0 items-center justify-center active:opacity-60"
         >
-          <Ionicons name="chevron-back" size={28} color="#ffffff" />
+          <Ionicons name="chevron-back" size={28} color={iosComm.systemBlue} />
         </Pressable>
         <Text
-          className="min-w-0 flex-1 px-1 text-center text-lg font-semibold text-white"
+          className="min-w-0 flex-1 px-1 text-center text-[17px] font-semibold"
+          style={{ color: iosComm.label }}
           numberOfLines={1}
         >
           {title}

@@ -1,17 +1,18 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { View, Text, FlatList, Pressable, ActivityIndicator, Alert } from "react-native";
+import { View, FlatList, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from "react-native";
 
 import { ChatInput } from "@/components/chat/ChatInput";
+import { IOSConversationHeader } from "@/components/chat/IOSConversationHeader";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { useMessages } from "@/hooks/useMessages";
+import { iosComm } from "@/lib/ios-comm-theme";
 import { supabase } from "@/lib/supabase";
 
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const [contactName, setContactName] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
   const { messages, isLoading, sendMessage, sendLoading } = useMessages(id ?? null);
 
   useEffect(() => {
@@ -22,7 +23,10 @@ export default function ConversationScreen() {
       .eq("id", id)
       .single()
       .then(({ data }) => {
-        setContactName((data as { contact_name?: string; contact_phone?: string })?.contact_name ?? (data as { contact_phone?: string })?.contact_phone ?? "");
+        const row = data as { contact_name?: string | null; contact_phone?: string | null } | null;
+        const phone = row?.contact_phone ?? "";
+        setContactPhone(phone);
+        setContactName(row?.contact_name?.trim() || phone || "");
       });
   }, [id]);
 
@@ -33,30 +37,38 @@ export default function ConversationScreen() {
       await sendMessage({ convId: id, content });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      Alert.alert("发送失败", msg);
+      Alert.alert("未能发送", msg);
     }
   };
 
+  const displayTitle = contactName || "信息";
+  const subtitle = contactPhone && contactPhone !== displayTitle ? contactPhone : undefined;
+
   return (
-    <View className="flex-1 bg-gray-900">
-      <View className="flex-row items-center pt-12 pb-4 px-4 border-b border-gray-800">
-        <Pressable onPress={() => router.back()} className="p-2 -ml-2">
-          <Ionicons name="arrow-back" size={24} color="white" />
-        </Pressable>
-        <Text className="text-white text-lg font-semibold ml-2 flex-1">
-          {contactName || "对话"}
-        </Text>
-      </View>
+    <KeyboardAvoidingView
+      className="flex-1"
+      style={{ backgroundColor: iosComm.bg }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+    >
+      <IOSConversationHeader
+        title={displayTitle}
+        subtitle={subtitle}
+        onCallPress={() =>
+          Alert.alert("通话", "虚拟号码语音通话能力接入后，将可在此直接回拨。")
+        }
+      />
       {isLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#3B82F6" />
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: iosComm.bg }}>
+          <ActivityIndicator color={iosComm.systemBlue} />
         </View>
       ) : (
         <FlatList
+          style={{ flex: 1, backgroundColor: iosComm.bg }}
           data={[...messages].reverse()}
           keyExtractor={(item) => item.id}
           inverted
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 10 }}
           renderItem={({ item }) => (
             <MessageBubble
               isSent={item.direction === "outbound"}
@@ -73,6 +85,6 @@ export default function ConversationScreen() {
         sourceLang="zh-CN"
         targetLang="en-US"
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }

@@ -21,7 +21,7 @@ export default function TabsLayout() {
         },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "消息" }} />
+      <Tabs.Screen name="index" options={{ title: "信息" }} />
       <Tabs.Screen name="projects" options={{ title: "项目" }} />
       <Tabs.Screen name="home" options={{ title: "首页" }} />
       <Tabs.Screen name="tools" options={{ title: "工具" }} />

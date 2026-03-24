@@ -1,11 +1,14 @@
 import { Stack } from "expo-router";
 
+import { iosComm } from "@/lib/ios-comm-theme";
+
 export default function ConversationLayout() {
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: "#111827" },
+        contentStyle: { backgroundColor: iosComm.bg },
+        animation: "slide_from_right",
       }}
     />
   );
