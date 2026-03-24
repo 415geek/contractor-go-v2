@@ -349,7 +349,9 @@ export async function telnyxAttachPhoneToMessagingProfile(
       `Telnyx 账号中未找到号码 ${e164}：请确认 TELNYX_API_KEY 与购号所用 Telnyx 项目一致，且该号码仍在账号内。`,
     );
   }
-  const patchRes = await telnyxFetch(apiKey, `/phone_numbers/${id}`, {
+  // Telnyx v2：messaging_profile_id 必须在子资源上更新，不能 PATCH /phone_numbers/{id} 根路径。
+  // @see https://developers.telnyx.com/api-reference/number-settings/update-the-messaging-profile-andor-messaging-product-of-a-phone-number
+  const patchRes = await telnyxFetch(apiKey, `/phone_numbers/${id}/messaging`, {
     method: "PATCH",
     body: JSON.stringify({ messaging_profile_id: messagingProfileId }),
   });
@@ -358,7 +360,7 @@ export async function telnyxAttachPhoneToMessagingProfile(
   try {
     patchJson = JSON.parse(patchText);
   } catch {
-    throw new Error(`Telnyx 更新号码返回非 JSON (HTTP ${patchRes.status})`);
+    throw new Error(`Telnyx 更新号码短信配置返回非 JSON (HTTP ${patchRes.status})`);
   }
   if (!patchRes.ok) {
     throw new Error(telnyxErrorMessage(patchJson));
@@ -366,7 +368,8 @@ export async function telnyxAttachPhoneToMessagingProfile(
 }
 
 /**
- * 发送短信；若因「from 与 Messaging Profile 不匹配」失败且已配置 messaging_profile_id，则自动 PATCH 绑定后重试一次。
+ * 发送短信；若因「from 与 Messaging Profile 不匹配」失败且已配置 messaging_profile_id，
+ * 则自动 PATCH /phone_numbers/{id}/messaging 绑定后重试一次。
  */
 export async function telnyxSendSmsWithProfileRepair(
   apiKey: string,
@@ -395,6 +398,12 @@ export function humanizeTelnyxSendMessageError(raw: string): string {
       "发短信失败：虚拟号码未绑定到 Telnyx 的 Messaging Profile，或 Secret「TELNYX_MESSAGING_PROFILE_ID」与号码所在 Profile 不一致。",
       "若已在 Supabase 配置正确的 Profile UUID，系统会在首次失败时尝试通过 API 把该号码绑定到该 Profile 并重试；若仍失败，请到 Telnyx：Phone Numbers → 该号码 → Messaging 手动核对。",
       "请确认 TELNYX_API_KEY 与号码所在 Telnyx 账号一致。",
+      `（Telnyx：${t}）`,
+    ].join(" ");
+  }
+  if (lower.includes("not reachable") && lower.includes("messaging_profile_id")) {
+    return [
+      "绑定 Messaging Profile 的 API 路径已过期或错误；请更新 Edge Function 至最新版本（应使用 PATCH /v2/phone_numbers/{id}/messaging）。",
       `（Telnyx：${t}）`,
     ].join(" ");
   }

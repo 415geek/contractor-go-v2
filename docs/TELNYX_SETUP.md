@@ -30,7 +30,7 @@
 | 搜索可用号 | `GET /v2/available_phone_numbers` | [List available phone numbers](https://developers.telnyx.com/api-reference/phone-number-search/list-available-phone-numbers.md) |
 | 订购号码 | `POST /v2/number_orders` | [Create a number order](https://developers.telnyx.com/api-reference/phone-number-orders/create-a-number-order.md) |
 | 发短信 | `POST /v2/messages` | [Send a message](https://developers.telnyx.com/api-reference/messages/send-a-message.md) |
-| 按号码查资源 ID / 更新绑定 | `GET` / `PATCH /v2/phone_numbers` | `send-message` 自动修复 Profile 绑定 |
+| 按号码查 ID / 绑定短信 Profile | `GET /v2/phone_numbers`、`PATCH /v2/phone_numbers/{id}/messaging` | `send-message` 自动修复（**不可**再 PATCH 根路径写 `messaging_profile_id`） |
 | 入站短信 | Webhook `message.received` | [Receiving Webhooks](https://developers.telnyx.com/docs/messaging/messages/receiving-webhooks) |
 
 ## 4. 部署
