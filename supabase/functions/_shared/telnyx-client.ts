@@ -434,5 +434,17 @@ export function humanizeTelnyxSendMessageError(raw: string): string {
       `（Telnyx：${t}）`,
     ].join(" ");
   }
+  if (
+    lower.includes("10dlc") ||
+    lower.includes("tcr") ||
+    lower.includes("campaign") ||
+    lower.includes("brand registration")
+  ) {
+    return [
+      "Telnyx 返回与 10DLC / Campaign 相关的错误：美国长码发美国手机号通常需完成 Brand + Campaign 并把号码挂到 Messaging Profile。",
+      "若 API 仍返回成功但对方收不到，请到 Telnyx Messaging → Logs 查看该条短信的 message.finalized（delivery_failed）与 errors；并确认 voip-webhook 已订阅 message.finalized。",
+      `（Telnyx：${t}）`,
+    ].join(" ");
+  }
   return t;
 }

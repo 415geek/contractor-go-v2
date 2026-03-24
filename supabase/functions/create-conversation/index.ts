@@ -1,5 +1,6 @@
 import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
 import { getUserFromRequest } from "../_shared/get-user.ts";
+import { normalizeSmsPhone } from "../_shared/sms-phone.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
 
 Deno.serve(async (req) => {
@@ -21,8 +22,9 @@ Deno.serve(async (req) => {
       contact_name?: string;
       virtual_number_id?: string;
     };
-    const contactPhone = typeof body.contact_phone === "string" ? body.contact_phone.trim() : "";
-    if (!contactPhone || contactPhone.length < 8) {
+    const rawPhone = typeof body.contact_phone === "string" ? body.contact_phone.trim() : "";
+    const contactPhone = normalizeSmsPhone(rawPhone);
+    if (!contactPhone || contactPhone.replace(/\D/g, "").length < 8) {
       return jsonResponse({ data: null, error: "invalid_body", message: "contact_phone required" }, 400);
     }
 

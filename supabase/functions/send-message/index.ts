@@ -1,4 +1,5 @@
 import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
+import { normalizeSmsPhone } from "../_shared/sms-phone.ts";
 import {
   humanizeTelnyxSendMessageError,
   parseTelnyxMessagingProfileId,
@@ -13,11 +14,6 @@ function getEnv(name: string): string {
   const v = Deno.env.get(name);
   if (!v) throw new Error(`Missing env: ${name}`);
   return v;
-}
-
-function normalizePhone(p: string): string {
-  const d = p.replace(/\D/g, "");
-  return d.length === 10 ? `+1${d}` : d.startsWith("1") && d.length === 11 ? `+${d}` : p.startsWith("+") ? p : `+${p}`;
 }
 
 Deno.serve(async (req) => {
@@ -136,22 +132,49 @@ Deno.serve(async (req) => {
           target_lang: contactLang,
         }),
       });
-      const translateJson = await translateRes.json();
-      translated = translateJson?.data?.translated_text ?? content;
+      let translateJson: { data?: { translated_text?: string } } = {};
+      try {
+        translateJson = await translateRes.json() as typeof translateJson;
+      } catch {
+        translateJson = {};
+      }
+      const tt = translateJson?.data?.translated_text;
+      translated = typeof tt === "string" && tt.trim().length > 0 ? tt.trim() : content;
     } else {
       translated = "";
+    }
+
+    const toE164 = normalizeSmsPhone(contactPhone);
+    const fromE164 = normalizeSmsPhone(fromDid);
+    if (!toE164 || toE164.length < 8) {
+      return jsonResponse({ data: null, error: "invalid_body", message: "Invalid contact_phone (E.164)" }, 400);
+    }
+
+    const isMms = mediaUrls.length > 0;
+    if (!isMms && !String(translated).trim()) {
+      return jsonResponse(
+        { data: null, error: "invalid_body", message: "Cannot send empty SMS (translation produced no text)" },
+        400,
+      );
     }
 
     let telnyxMessageId: string | null = null;
     try {
       const sendRes = await telnyxSendSmsWithProfileRepair(getEnv("TELNYX_API_KEY"), {
-        from: fromDid,
-        to: normalizePhone(contactPhone),
+        from: fromE164,
+        to: toE164,
         text: translated,
         ...(messagingProfileId ? { messaging_profile_id: messagingProfileId } : {}),
         ...(mediaUrls.length > 0 ? { media_urls: mediaUrls } : {}),
       });
       telnyxMessageId = sendRes.telnyxMessageId;
+      const toTail = toE164.length > 4 ? toE164.slice(-4) : "****";
+      const fromTail = fromE164.length > 4 ? fromE164.slice(-4) : "****";
+      console.log(
+        `[send-message] telnyx accepted id=${telnyxMessageId ?? "none"} mms=${isMms} to=…${toTail} from=…${fromTail} mp=${
+          messagingProfileId ? "yes" : "no"
+        }`,
+      );
     } catch (sendErr) {
       const raw = sendErr instanceof Error ? sendErr.message : String(sendErr);
       throw new Error(humanizeTelnyxSendMessageError(raw));

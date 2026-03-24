@@ -1,15 +1,11 @@
 import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
+import { normalizeSmsPhone } from "../_shared/sms-phone.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
 
 function getEnv(name: string): string {
   const v = Deno.env.get(name);
   if (!v) throw new Error(`Missing env: ${name}`);
   return v;
-}
-
-function normalizePhone(p: string): string {
-  const d = p.replace(/\D/g, "");
-  return d.length === 10 ? `+1${d}` : d.startsWith("1") && d.length === 11 ? `+${d}` : p.startsWith("+") ? p : `+${p}`;
 }
 
 /** 从 Telnyx payload 取号码：支持 E.164 字符串或 { phone_number } */
@@ -136,8 +132,8 @@ async function processInboundSms(
   admin: ReturnType<typeof createAdminClient>,
   body: { from: string; to: string; message: string },
 ): Promise<Response> {
-  const toNormalized = normalizePhone(body.to);
-  const fromNormalized = normalizePhone(body.from);
+  const toNormalized = normalizeSmsPhone(body.to);
+  const fromNormalized = normalizeSmsPhone(body.from);
 
   const { data: vn } = await admin
     .from("virtual_numbers")

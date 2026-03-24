@@ -31,6 +31,13 @@ export function MessageBubble({
   mediaUrl,
 }: MessageBubbleProps) {
   const pending = status === "sending";
+  const deliveryHint = (() => {
+    if (!isSent || pending) return "";
+    if (status === "failed") return "未送达 ";
+    if (status === "delivered") return "已送达 ";
+    if (status === "sent") return "已发送 ";
+    return "";
+  })();
   const hasMedia = !!(mediaUrl && (messageType === "image" || messageType === "video"));
   const placeholderOnly = content === "[图片]" || content === "[视频]";
   const mainText = isSent ? translatedContent || content : translatedContent || content;
@@ -105,13 +112,13 @@ export function MessageBubble({
       </View>
       <Text
         style={{
-          color: iosComm.tertiaryLabel,
+          color: isSent && status === "failed" ? "#FF453A" : iosComm.tertiaryLabel,
           fontSize: 11,
           marginTop: 4,
           textAlign: isSent ? "right" : "left",
         }}
       >
-        {pending ? "发送中… " : ""}
+        {pending ? "发送中… " : deliveryHint}
         {formatTime(createdAt)}
       </Text>
     </View>
