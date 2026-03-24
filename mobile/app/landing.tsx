@@ -2,6 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Modal, Pressable, ScrollView, Text, View } from "react-native";
+
+import { animatedUseNativeDriver } from "@/lib/animated-native-driver";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LogoMark } from "@/components/brand/LogoMark";
@@ -90,7 +92,7 @@ export default function LandingScreen() {
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
       toValue: 0.98,
-      useNativeDriver: true,
+      useNativeDriver: animatedUseNativeDriver,
       speed: 45,
       bounciness: 3,
     }).start();
@@ -99,7 +101,7 @@ export default function LandingScreen() {
   const handlePressOut = () => {
     Animated.spring(scaleAnim, {
       toValue: 1,
-      useNativeDriver: true,
+      useNativeDriver: animatedUseNativeDriver,
       speed: 45,
       bounciness: 3,
     }).start();
@@ -113,12 +115,12 @@ export default function LandingScreen() {
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 480,
-          useNativeDriver: true,
+          useNativeDriver: animatedUseNativeDriver,
         }),
         Animated.timing(slideAnim, {
           toValue: 0,
           duration: 480,
-          useNativeDriver: true,
+          useNativeDriver: animatedUseNativeDriver,
         }),
       ]).start();
     });

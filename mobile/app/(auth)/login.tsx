@@ -18,6 +18,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PhoneInput } from "@/components/ui/PhoneInput";
+import { animatedUseNativeDriver } from "@/lib/animated-native-driver";
 import { useLang } from "@/lib/i18n";
 import { replaceSignedInHome } from "@/lib/web-navigation";
 
@@ -97,10 +98,20 @@ export default function LoginScreen() {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
-    Animated.spring(scaleAnim, { toValue: 0.97, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
+    Animated.spring(scaleAnim, {
+      toValue: 0.97,
+      useNativeDriver: animatedUseNativeDriver,
+      speed: 50,
+      bounciness: 4,
+    }).start();
   };
   const handlePressOut = () => {
-    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 4 }).start();
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: animatedUseNativeDriver,
+      speed: 50,
+      bounciness: 4,
+    }).start();
   };
 
   const fullPhone = useMemo(() => `${countryCode}${phoneNumber}`, [countryCode, phoneNumber]);

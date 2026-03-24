@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import * as Haptics from "expo-haptics";
 
+import { animatedUseNativeDriver } from "@/lib/animated-native-driver";
+
 export interface TouchableScaleProps extends Omit<PressableProps, "style"> {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -35,7 +37,7 @@ export function TouchableScale({
   const handlePressIn = (e: GestureResponderEvent) => {
     Animated.spring(scale, {
       toValue: activeScale,
-      useNativeDriver: true,
+      useNativeDriver: animatedUseNativeDriver,
       speed: 50,
       bounciness: 4,
     }).start();
@@ -45,7 +47,7 @@ export function TouchableScale({
   const handlePressOut = (e: GestureResponderEvent) => {
     Animated.spring(scale, {
       toValue: 1,
-      useNativeDriver: true,
+      useNativeDriver: animatedUseNativeDriver,
       speed: 50,
       bounciness: 4,
     }).start();
