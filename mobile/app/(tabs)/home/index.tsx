@@ -18,27 +18,12 @@ import { pushPath } from "@/lib/web-navigation";
 
 const BOTTOM_INSET = Platform.OS === "ios" ? 108 : 96;
 
-function StatTile({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: number;
-  accent: "default" | "success" | "primary";
-}) {
-  const ring =
-    accent === "success"
-      ? "border-emerald-500/35 bg-emerald-500/10"
-      : accent === "primary"
-        ? "border-primary-500/35 bg-primary-500/10"
-        : "border-surface-border bg-surface-card";
-  const numColor =
-    accent === "success" ? "text-emerald-400" : accent === "primary" ? "text-primary-400" : "text-ink";
+/** 统一表面，避免三色 KPI 横条像通用 SaaS 模板；层级靠标签 + 数字即可 */
+function StatTile({ label, value }: { label: string; value: number }) {
   return (
-    <View className={`min-w-0 flex-1 rounded-2xl border px-3 py-3 shadow-sm ${ring}`}>
+    <View className="min-w-0 flex-1 rounded-2xl border border-surface-border bg-surface-card px-3 py-3 shadow-sm">
       <Text className="text-[11px] font-medium uppercase tracking-wide text-ink-tertiary">{label}</Text>
-      <Text className={`mt-1 text-2xl font-bold tabular-nums ${numColor}`}>{value}</Text>
+      <Text className="mt-1 text-2xl font-bold tabular-nums text-ink">{value}</Text>
     </View>
   );
 }
@@ -93,9 +78,9 @@ export default function HomeDashboardScreen() {
         <View className="px-5 pb-5">
           <Text className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-tertiary">项目概览</Text>
           <View className="flex-row gap-2.5">
-            <StatTile label="全部" value={total} accent="default" />
-            <StatTile label="进行中" value={active} accent="primary" />
-            <StatTile label="已完成" value={done} accent="success" />
+            <StatTile label="全部" value={total} />
+            <StatTile label="进行中" value={active} />
+            <StatTile label="已完成" value={done} />
           </View>
         </View>
 
