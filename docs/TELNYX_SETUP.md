@@ -52,3 +52,24 @@ supabase functions deploy voip-available-numbers voip-rate-centers voip-purchase
 ## 7. SaaS 模式：单账号 API vs Managed Accounts（Reseller）
 
 若需理解 **「普通 API」与「类经销商子账号」**、以及 **何时上 Managed Accounts**，见 **[TELNYX_SAAS_ARCHITECTURE.md](./TELNYX_SAAS_ARCHITECTURE.md)**。
+
+## 8. 能发出短信但 App 里收不到回复（入站）
+
+入站依赖 **Telnyx → 你们的 Webhook → Supabase `voip-webhook`**，请逐项核对：
+
+1. **Messaging Profile 的 Webhook URL**  
+   必须为：  
+   `https://<PROJECT_REF>.supabase.co/functions/v1/voip-webhook`  
+   且勾选 / 启用 **`message.received`**。改完后 Telnyx 侧可发一条测试短信看 **Webhook 投递日志**是否 2xx。
+
+2. **号码挂在该 Profile 上**  
+   购号时若配置了 `TELNYX_MESSAGING_PROFILE_ID`，号码会绑定该 Profile；若手动在 Telnyx 改过号码的 Messaging 设置，需仍指向带上述 Webhook 的 Profile。
+
+3. **Supabase 日志**  
+   Dashboard → Edge Functions → `voip-webhook` → Logs：  
+   - `Unknown number`：入站 `to` 与 `virtual_numbers.phone_number` 不一致（格式应为 `+1XXXXXXXXXX`）。  
+   - `invalid_body`：Webhook 体与预期不符（已兼容 Telnyx 常见 `from`/`to` 字符串与 `text`/`body`；部署最新 `voip-webhook` 后再试）。
+
+4. **部署**  
+   修改过 `voip-webhook` 后执行：  
+   `supabase functions deploy voip-webhook --project-ref <ref>`

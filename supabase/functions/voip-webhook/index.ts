@@ -12,7 +12,26 @@ function normalizePhone(p: string): string {
   return d.length === 10 ? `+1${d}` : d.startsWith("1") && d.length === 11 ? `+${d}` : p.startsWith("+") ? p : `+${p}`;
 }
 
-/** Telnyx `message.received` 与旧版简单 JSON 兼容 */
+/** 从 Telnyx payload 取号码：支持 E.164 字符串或 { phone_number } */
+function phoneFromField(v: unknown): string {
+  if (typeof v === "string" && v.trim()) return v.trim();
+  if (v && typeof v === "object" && "phone_number" in v && typeof (v as { phone_number?: string }).phone_number === "string") {
+    return (v as { phone_number: string }).phone_number.trim();
+  }
+  return "";
+}
+
+function toDestFromPayload(pl: Record<string, unknown>): string {
+  const t = pl.to;
+  if (typeof t === "string" && t.trim()) return t.trim();
+  if (Array.isArray(t) && t.length > 0) {
+    const first = phoneFromField(t[0]);
+    if (first) return first;
+  }
+  return "";
+}
+
+/** Telnyx `message.received` 与旧版简单 JSON 兼容（官方 payload 常为 from/to 字符串 + text 或 body） */
 async function parseInbound(req: Request): Promise<{ from: string; to: string; message: string } | null> {
   const ct = req.headers.get("content-type") ?? "";
   if (!ct.includes("application/json")) {
@@ -29,21 +48,22 @@ async function parseInbound(req: Request): Promise<{ from: string; to: string; m
   const data = raw?.data as
     | {
         event_type?: string;
-        payload?: {
-          from?: { phone_number?: string };
-          to?: Array<{ phone_number?: string }>;
-          text?: string;
-        };
+        payload?: Record<string, unknown>;
       }
     | undefined;
 
-  if (data?.event_type === "message.received" && data.payload) {
-    const pl = data.payload;
-    const from = pl.from?.phone_number;
-    const to = pl.to?.[0]?.phone_number;
-    const message = typeof pl.text === "string" ? pl.text : "";
-    if (from && to && message) {
-      return { from, to, message };
+  if (data?.event_type === "message.received" && data.payload && typeof data.payload === "object") {
+    const pl = data.payload as Record<string, unknown>;
+    const from = phoneFromField(pl.from);
+    const to = toDestFromPayload(pl);
+    const message =
+      typeof pl.text === "string"
+        ? pl.text
+        : typeof pl.body === "string"
+          ? pl.body
+          : "";
+    if (from && to) {
+      return { from, to, message: message || "(无文本内容)" };
     }
   }
 
