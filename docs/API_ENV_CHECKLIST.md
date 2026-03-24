@@ -17,7 +17,7 @@
 | `STRIPE_WEBHOOK_SECRET` | `stripe-webhook` 签名校验 | 若启用 Stripe 订阅 |
 | `STRIPE_PRICE_ID_PRO` | Pro 月付 Price（`price_...`） | 若启用 Checkout |
 | `TELNYX_API_KEY` | Telnyx 搜索/购买号码、发短信 | ✓（若用虚拟号码） |
-| `TELNYX_MESSAGING_PROFILE_ID` | 订购时绑定 Messaging Profile（推荐） | 可选 |
+| `TELNYX_MESSAGING_PROFILE_ID` | 购号时绑定 Profile；**发短信时**也会传给 Telnyx，避免「from 与 Messaging Profile 不匹配」错误（号码须在 Telnyx 控制台挂到同一 Profile） | **强烈建议** |
 | `TELNYX_CONNECTION_ID` | 订购时绑定语音 Connection | 可选 |
 | `SOCRATA_APP_TOKEN` | Permit 查询走 SF DataSF（Socrata）时可选，提高 API 限额 | 可选 |
 | `CLERK_SECRET_KEY` | Edge `get-user` 内 `verifyToken`（兼容 Clerk JWE Session；会拉 JWKS） | **未配置时**，消息/项目/购号等凡需登录的接口一律 **401 `Invalid or missing token`** |
@@ -51,7 +51,7 @@
 | 功能 | Edge Function | 依赖 |
 |------|---------------|------|
 | 消息/对话列表 | get-conversations, get-messages, create-conversation | - |
-| 发消息 | send-message | TELNYX_API_KEY, translate |
+| 发消息 | send-message | TELNYX_API_KEY；**TELNYX_MESSAGING_PROFILE_ID**（与号码绑定同一 Profile）；translate |
 | 虚拟号码列表 | voip-my-numbers | - |
 | 搜索号码 | voip-available-numbers | TELNYX_API_KEY；`bay_area` / `state` / `area_code` / `state`+`ratecenter` |
 | 购买号码 | voip-purchase-number | **CLERK_SECRET_KEY** 或 **CLERK_JWT_KEY**（校验购号用户 Session）；TELNYX_*；缺 Clerk 密钥时前端会报 `Invalid or missing token` |

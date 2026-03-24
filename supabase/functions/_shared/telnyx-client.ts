@@ -283,17 +283,21 @@ export async function telnyxWaitNumberOrderSuccess(
 
 export async function telnyxSendSms(
   apiKey: string,
-  params: { from: string; to: string; text: string },
+  params: { from: string; to: string; text: string; messaging_profile_id?: string },
 ): Promise<void> {
   const from = params.from.startsWith("+") ? params.from : normalizeToE164US(params.from);
   const to = params.to.startsWith("+") ? params.to : normalizeToE164US(params.to);
+  const body: Record<string, unknown> = {
+    from,
+    to,
+    text: params.text,
+  };
+  if (params.messaging_profile_id) {
+    body.messaging_profile_id = params.messaging_profile_id;
+  }
   const res = await telnyxFetch(apiKey, "/messages", {
     method: "POST",
-    body: JSON.stringify({
-      from,
-      to,
-      text: params.text,
-    }),
+    body: JSON.stringify(body),
   });
   const text = await res.text();
   let json: unknown;
@@ -305,4 +309,18 @@ export async function telnyxSendSms(
   if (!res.ok) {
     throw new Error(telnyxErrorMessage(json));
   }
+}
+
+/** 将 Telnyx 发短信常见错误转为可操作的说明（中英混排原文仍保留在括号内便于搜日志）。 */
+export function humanizeTelnyxSendMessageError(raw: string): string {
+  const t = raw.trim();
+  const lower = t.toLowerCase();
+  if (lower.includes("from") && lower.includes("messaging profile")) {
+    return [
+      "发短信失败：虚拟号码未绑定到 Telnyx 的 Messaging Profile，或 Supabase Secret「TELNYX_MESSAGING_PROFILE_ID」与号码所在 Profile 不一致。",
+      "请在 Telnyx 控制台：Phone Numbers → 选中该号码 → Messaging → 绑定到带 Webhook 的 Messaging Profile；并在 Supabase Edge Secrets 中设置同一 Profile 的 UUID。",
+      `（Telnyx：${t}）`,
+    ].join(" ");
+  }
+  return t;
 }

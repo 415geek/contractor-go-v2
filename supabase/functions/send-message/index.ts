@@ -1,5 +1,9 @@
 import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
-import { telnyxSendSms } from "../_shared/telnyx-client.ts";
+import {
+  humanizeTelnyxSendMessageError,
+  parseTelnyxMessagingProfileId,
+  telnyxSendSms,
+} from "../_shared/telnyx-client.ts";
 import { getUserFromRequest } from "../_shared/get-user.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
 import { FREE_TIER_SMS_OUTBOUND_LIMIT, isProSubscriber } from "../_shared/voip-entitlements.ts";
@@ -84,19 +88,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    let fromDid: string;
-    if (vnId) {
-      const { data: vn } = await admin.from("virtual_numbers").select("phone_number").eq("id", vnId).maybeSingle();
-      fromDid = (vn as { phone_number?: string } | null)?.phone_number ?? "";
-    } else {
+    let fromDid = "";
+    if (effectiveVnId) {
       const { data: vn } = await admin
         .from("virtual_numbers")
         .select("phone_number")
-        .eq("user_id", user.id)
-        .limit(1)
+        .eq("id", effectiveVnId)
         .maybeSingle();
       fromDid = (vn as { phone_number?: string } | null)?.phone_number ?? "";
     }
+
+    const messagingProfileId = parseTelnyxMessagingProfileId(Deno.env.get("TELNYX_MESSAGING_PROFILE_ID"));
 
     if (!fromDid || !contactPhone) {
       return jsonResponse({ data: null, error: "invalid_conversation", message: "Missing virtual number or contact" }, 400);
@@ -120,11 +122,17 @@ Deno.serve(async (req) => {
     const translateJson = await translateRes.json();
     const translated = translateJson?.data?.translated_text ?? content;
 
-    await telnyxSendSms(getEnv("TELNYX_API_KEY"), {
-      from: fromDid,
-      to: normalizePhone(contactPhone),
-      text: translated,
-    });
+    try {
+      await telnyxSendSms(getEnv("TELNYX_API_KEY"), {
+        from: fromDid,
+        to: normalizePhone(contactPhone),
+        text: translated,
+        ...(messagingProfileId ? { messaging_profile_id: messagingProfileId } : {}),
+      });
+    } catch (sendErr) {
+      const raw = sendErr instanceof Error ? sendErr.message : String(sendErr);
+      throw new Error(humanizeTelnyxSendMessageError(raw));
+    }
 
     const { data: msg, error: msgErr } = await admin
       .from("messages")
