@@ -49,8 +49,9 @@ function RootNavigator() {
     const inAuthGroup = segments[0] === "(auth)";
     const inLanding = segments[0] === "landing";
     const inSSO = segments[0] === "sso-callback";
+    const inPrivacy = segments[0] === "privacy";
 
-    if (inAuthGroup || inLanding || inSSO) return;
+    if (inAuthGroup || inLanding || inSSO || inPrivacy) return;
 
     router.replace("/landing");
   }, [isSignedIn, isLoaded, segments, router]);

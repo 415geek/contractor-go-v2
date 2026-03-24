@@ -148,7 +148,7 @@ export default function ProfileScreen() {
           iconColor: "#94A3B8",
           iconBg: "bg-slate-500/15",
           label: "隐私政策",
-          onPress: () => {},
+          onPress: () => router.push("/privacy"),
         },
         {
           icon: "information-circle-outline",
