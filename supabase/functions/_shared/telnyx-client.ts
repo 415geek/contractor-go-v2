@@ -311,14 +311,90 @@ export async function telnyxSendSms(
   }
 }
 
+/** Telnyx 报错：from 与 Messaging Profile 不匹配（可尝试 PATCH 号码绑定后重发）。 */
+export function isTelnyxMessagingProfileMismatchError(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  return lower.includes("messaging profile") &&
+    (lower.includes("from") || lower.includes("valid number"));
+}
+
+/**
+ * 将账号下指定 E.164 号码绑定到 Messaging Profile（修复早期购号未带 Profile、或控制台被改过的情况）。
+ * @see PATCH /v2/phone_numbers/{id}
+ */
+export async function telnyxAttachPhoneToMessagingProfile(
+  apiKey: string,
+  e164From: string,
+  messagingProfileId: string,
+): Promise<void> {
+  const e164 = e164From.startsWith("+") ? e164From : normalizeToE164US(e164From);
+  const qs = new URLSearchParams();
+  qs.set("filter[phone_number]", e164);
+  qs.set("page[size]", "1");
+  const listRes = await telnyxFetch(apiKey, `/phone_numbers?${qs}`, { method: "GET" });
+  const listText = await listRes.text();
+  let listJson: unknown;
+  try {
+    listJson = JSON.parse(listText);
+  } catch {
+    throw new Error(`Telnyx 查询号码列表返回非 JSON (HTTP ${listRes.status})`);
+  }
+  if (!listRes.ok) {
+    throw new Error(telnyxErrorMessage(listJson));
+  }
+  const rows = (listJson as { data?: Array<{ id?: string }> }).data ?? [];
+  const id = rows[0]?.id;
+  if (!id) {
+    throw new Error(
+      `Telnyx 账号中未找到号码 ${e164}：请确认 TELNYX_API_KEY 与购号所用 Telnyx 项目一致，且该号码仍在账号内。`,
+    );
+  }
+  const patchRes = await telnyxFetch(apiKey, `/phone_numbers/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ messaging_profile_id: messagingProfileId }),
+  });
+  const patchText = await patchRes.text();
+  let patchJson: unknown;
+  try {
+    patchJson = JSON.parse(patchText);
+  } catch {
+    throw new Error(`Telnyx 更新号码返回非 JSON (HTTP ${patchRes.status})`);
+  }
+  if (!patchRes.ok) {
+    throw new Error(telnyxErrorMessage(patchJson));
+  }
+}
+
+/**
+ * 发送短信；若因「from 与 Messaging Profile 不匹配」失败且已配置 messaging_profile_id，则自动 PATCH 绑定后重试一次。
+ */
+export async function telnyxSendSmsWithProfileRepair(
+  apiKey: string,
+  params: { from: string; to: string; text: string; messaging_profile_id?: string },
+): Promise<void> {
+  try {
+    await telnyxSendSms(apiKey, params);
+  } catch (e) {
+    const raw = e instanceof Error ? e.message : String(e);
+    const mp = params.messaging_profile_id;
+    if (!mp || !isTelnyxMessagingProfileMismatchError(raw)) {
+      throw e;
+    }
+    console.warn("[telnyx] SMS profile mismatch, attaching number then retry once:", raw);
+    await telnyxAttachPhoneToMessagingProfile(apiKey, params.from, mp);
+    await telnyxSendSms(apiKey, params);
+  }
+}
+
 /** 将 Telnyx 发短信常见错误转为可操作的说明（中英混排原文仍保留在括号内便于搜日志）。 */
 export function humanizeTelnyxSendMessageError(raw: string): string {
   const t = raw.trim();
   const lower = t.toLowerCase();
   if (lower.includes("from") && lower.includes("messaging profile")) {
     return [
-      "发短信失败：虚拟号码未绑定到 Telnyx 的 Messaging Profile，或 Supabase Secret「TELNYX_MESSAGING_PROFILE_ID」与号码所在 Profile 不一致。",
-      "请在 Telnyx 控制台：Phone Numbers → 选中该号码 → Messaging → 绑定到带 Webhook 的 Messaging Profile；并在 Supabase Edge Secrets 中设置同一 Profile 的 UUID。",
+      "发短信失败：虚拟号码未绑定到 Telnyx 的 Messaging Profile，或 Secret「TELNYX_MESSAGING_PROFILE_ID」与号码所在 Profile 不一致。",
+      "若已在 Supabase 配置正确的 Profile UUID，系统会在首次失败时尝试通过 API 把该号码绑定到该 Profile 并重试；若仍失败，请到 Telnyx：Phone Numbers → 该号码 → Messaging 手动核对。",
+      "请确认 TELNYX_API_KEY 与号码所在 Telnyx 账号一致。",
       `（Telnyx：${t}）`,
     ].join(" ");
   }

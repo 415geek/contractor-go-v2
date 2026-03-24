@@ -2,7 +2,7 @@ import { jsonResponse, handleOptionsRequest } from "../_shared/response.ts";
 import {
   humanizeTelnyxSendMessageError,
   parseTelnyxMessagingProfileId,
-  telnyxSendSms,
+  telnyxSendSmsWithProfileRepair,
 } from "../_shared/telnyx-client.ts";
 import { getUserFromRequest } from "../_shared/get-user.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
     const translated = translateJson?.data?.translated_text ?? content;
 
     try {
-      await telnyxSendSms(getEnv("TELNYX_API_KEY"), {
+      await telnyxSendSmsWithProfileRepair(getEnv("TELNYX_API_KEY"), {
         from: fromDid,
         to: normalizePhone(contactPhone),
         text: translated,
