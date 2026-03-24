@@ -138,6 +138,7 @@ Deno.serve(async (req) => {
       .from("messages")
       .insert({
         conversation_id: conversationId,
+        user_id: user.id,
         direction: "outbound",
         message_type: "text",
         original_content: content,
