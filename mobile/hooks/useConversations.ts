@@ -9,6 +9,8 @@ export type Conversation = {
   virtual_number_id: string | null;
   contact_phone: string;
   contact_name: string | null;
+  contact_company?: string | null;
+  contact_notes?: string | null;
   contact_language: string;
   last_message_at: string | null;
   created_at: string;
@@ -31,6 +33,27 @@ async function createConversation(
   return data;
 }
 
+export type UpdateConversationBody = {
+  conversation_id: string;
+  contact_name?: string | null;
+  contact_company?: string | null;
+  contact_notes?: string | null;
+  contact_phone?: string | null;
+  contact_language?: string | null;
+};
+
+async function patchConversation(
+  getToken: () => Promise<string | null>,
+  body: UpdateConversationBody,
+): Promise<Conversation> {
+  const data = await invokeEdgeWithClerkFromAuth<Conversation>(getToken, "update-conversation", {
+    method: "POST",
+    body,
+  });
+  if (!data) throw new Error("未返回对话数据");
+  return data;
+}
+
 export function useConversations() {
   const qc = useQueryClient();
   const { getToken: _getToken, isLoaded, isSignedIn, sessionId } = useAuth();
@@ -47,6 +70,12 @@ export function useConversations() {
       createConversation(getToken, user!.id, params),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["conversations"] }),
   });
+  const updateMutation = useMutation({
+    mutationFn: (body: UpdateConversationBody) => patchConversation(getToken, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+    },
+  });
   return {
     conversations: query.data ?? [],
     isLoading: query.isLoading,
@@ -54,5 +83,7 @@ export function useConversations() {
     refetch: query.refetch,
     createConversation: createMutation.mutateAsync,
     createLoading: createMutation.isPending,
+    updateConversation: updateMutation.mutateAsync,
+    updateConversationLoading: updateMutation.isPending,
   };
 }

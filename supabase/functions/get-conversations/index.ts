@@ -19,7 +19,9 @@ Deno.serve(async (req) => {
     const admin = createAdminClient();
     const { data, error } = await admin
       .from("conversations")
-      .select("id, user_id, virtual_number_id, contact_phone, contact_name, contact_language, last_message_at, created_at")
+      .select(
+        "id, user_id, virtual_number_id, contact_phone, contact_name, contact_company, contact_notes, contact_language, last_message_at, created_at",
+      )
       .eq("user_id", user.id)
       .order("last_message_at", { ascending: false, nullsFirst: false });
 

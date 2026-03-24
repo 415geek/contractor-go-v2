@@ -285,16 +285,31 @@ export type TelnyxSendSmsResult = { telnyxMessageId: string | null };
 
 export async function telnyxSendSms(
   apiKey: string,
-  params: { from: string; to: string; text: string; messaging_profile_id?: string },
+  params: {
+    from: string;
+    to: string;
+    text: string;
+    messaging_profile_id?: string;
+    media_urls?: string[];
+  },
 ): Promise<TelnyxSendSmsResult> {
   const from = params.from.startsWith("+") ? params.from : normalizeToE164US(params.from);
   const to = params.to.startsWith("+") ? params.to : normalizeToE164US(params.to);
+  const mediaUrls = params.media_urls?.filter((u) => typeof u === "string" && u.startsWith("http")) ?? [];
+  const isMms = mediaUrls.length > 0;
+
   const body: Record<string, unknown> = {
     from,
     to,
-    text: params.text,
-    type: "SMS",
+    type: isMms ? "MMS" : "SMS",
   };
+  if (isMms) {
+    body.media_urls = mediaUrls;
+    const cap = params.text.trim();
+    if (cap) body.text = cap;
+  } else {
+    body.text = params.text;
+  }
   if (params.messaging_profile_id) {
     body.messaging_profile_id = params.messaging_profile_id;
   }
@@ -379,7 +394,13 @@ export async function telnyxAttachPhoneToMessagingProfile(
  */
 export async function telnyxSendSmsWithProfileRepair(
   apiKey: string,
-  params: { from: string; to: string; text: string; messaging_profile_id?: string },
+  params: {
+    from: string;
+    to: string;
+    text: string;
+    messaging_profile_id?: string;
+    media_urls?: string[];
+  },
 ): Promise<TelnyxSendSmsResult> {
   try {
     return await telnyxSendSms(apiKey, params);

@@ -440,6 +440,12 @@ verify_jwt = false
 [functions.create-conversation]
 verify_jwt = false
 
+[functions.update-conversation]
+verify_jwt = false
+
+[functions.upload-chat-media]
+verify_jwt = false
+
 [functions.get-messages]
 verify_jwt = false
 

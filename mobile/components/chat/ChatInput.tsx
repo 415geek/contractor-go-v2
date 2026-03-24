@@ -11,7 +11,10 @@ import { VoiceRecorder } from "./VoiceRecorder";
 
 type ChatInputProps = {
   onSend: (text: string) => void | Promise<void>;
+  /** 相册 / 视频（MMS），由上层处理权限、上传与发送 */
+  onAttachPress?: () => void | Promise<void>;
   disabled?: boolean;
+  attachDisabled?: boolean;
   sourceLang?: string;
   targetLang?: string;
 };
@@ -19,7 +22,14 @@ type ChatInputProps = {
 /**
  * 类 iOS「信息」输入栏：底栏 + 圆角输入框 + 发送（有内容时高亮）。
  */
-export function ChatInput({ onSend, disabled, sourceLang = "zh-CN", targetLang = "en-US" }: ChatInputProps) {
+export function ChatInput({
+  onSend,
+  onAttachPress,
+  disabled,
+  attachDisabled,
+  sourceLang = "zh-CN",
+  targetLang = "en-US",
+}: ChatInputProps) {
   const [text, setText] = useState("");
   const insets = useSafeAreaInsets();
   const { translatedText, isTranslating, error: translateError } = useRealtimeTranslation({
@@ -49,6 +59,7 @@ export function ChatInput({ onSend, disabled, sourceLang = "zh-CN", targetLang =
   };
 
   const canSend = text.trim().length > 0 && !disabled;
+  const attachOff = attachDisabled ?? disabled;
   const bottomPad = Math.max(insets.bottom, 8);
 
   return (
@@ -75,6 +86,27 @@ export function ChatInput({ onSend, disabled, sourceLang = "zh-CN", targetLang =
           </View>
         ) : null}
         <View className="flex-row items-end gap-1.5">
+          {onAttachPress ? (
+            <Pressable
+              onPress={() => void onAttachPress()}
+              disabled={attachOff}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="添加图片或视频"
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 17,
+                backgroundColor: iosComm.inputFill,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 2,
+                opacity: attachOff ? 0.45 : 1,
+              }}
+            >
+              <Ionicons name="add" size={26} color={iosComm.systemBlue} />
+            </Pressable>
+          ) : null}
           <VoiceRecorder
             isRecording={isRecording}
             duration={duration}

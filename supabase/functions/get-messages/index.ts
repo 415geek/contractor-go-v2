@@ -36,7 +36,9 @@ Deno.serve(async (req) => {
 
     const { data, error } = await admin
       .from("messages")
-      .select("id, conversation_id, direction, message_type, original_content, translated_content, status, created_at")
+      .select(
+        "id, conversation_id, direction, message_type, original_content, translated_content, status, created_at, media_url",
+      )
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true });
 

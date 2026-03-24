@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     const admin = createAdminClient();
     const { data: urow, error: uerr } = await admin
       .from("users")
-      .select("subscription_tier, subscription_expires_at")
+      .select("subscription_tier, subscription_expires_at, default_language")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -64,10 +64,13 @@ Deno.serve(async (req) => {
       voiceSecondsUsed = typeof m.voice_seconds_used === "number" ? m.voice_seconds_used : 0;
     }
 
+    const defaultLang = (urow as { default_language?: string } | null)?.default_language ?? "en";
+
     return jsonResponse({
       data: {
         subscription_tier: tier,
         subscription_expires_at: expiresAt,
+        default_language: defaultLang,
         is_pro: pro,
         virtual_numbers: numbers,
         usage: {

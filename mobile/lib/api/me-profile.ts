@@ -17,6 +17,8 @@ export type MeProfileVirtualNumber = {
 export type MeProfileData = {
   subscription_tier: string;
   subscription_expires_at: string | null;
+  /** 我方默认语言，与 translate / 出站短信源语言一致 */
+  default_language: string;
   is_pro: boolean;
   virtual_numbers: MeProfileVirtualNumber[];
   usage: MeProfileUsage;
@@ -43,5 +45,8 @@ export async function fetchMeProfile(clerkJwt: string): Promise<MeProfileData> {
   }
   const d = json.data;
   if (!d) throw new Error(json.message?.trim() || "无数据");
-  return d;
+  return {
+    ...d,
+    default_language: (d as Partial<MeProfileData>).default_language?.trim() || "zh-CN",
+  };
 }

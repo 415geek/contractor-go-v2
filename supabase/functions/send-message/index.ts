@@ -34,11 +34,23 @@ Deno.serve(async (req) => {
       return jsonResponse({ data: null, error: "unauthorized", message: "Invalid token" }, 401);
     }
 
-    const body = await req.json() as { conversation_id?: string; content?: string; content_type?: string };
-    const conversationId = body.conversation_id;
+    const body = await req.json() as {
+      conversation_id?: string;
+      content?: string;
+      content_type?: string;
+      media_urls?: string[];
+      media_kind?: string;
+    };
+    const conversationId = typeof body.conversation_id === "string" ? body.conversation_id.trim() : "";
     const content = typeof body.content === "string" ? body.content.trim() : "";
-    if (!conversationId || !content) {
-      return jsonResponse({ data: null, error: "invalid_body", message: "conversation_id and content required" }, 400);
+    const mediaUrls = Array.isArray(body.media_urls)
+      ? body.media_urls.filter((u): u is string => typeof u === "string" && u.startsWith("http"))
+      : [];
+    if (!conversationId || (!content && mediaUrls.length === 0)) {
+      return jsonResponse(
+        { data: null, error: "invalid_body", message: "conversation_id and (content or media_urls) required" },
+        400,
+      );
     }
 
     const admin = createAdminClient();
@@ -107,20 +119,28 @@ Deno.serve(async (req) => {
     const userRow = await admin.from("users").select("default_language").eq("id", user.id).single();
     const userLang = (userRow.data as { default_language?: string } | null)?.default_language ?? "en";
 
-    const translateRes = await fetch(`${getEnv("SUPABASE_URL")}/functions/v1/translate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${getEnv("SUPABASE_ANON_KEY")}`,
-      },
-      body: JSON.stringify({
-        text: content,
-        source_lang: userLang,
-        target_lang: contactLang,
-      }),
-    });
-    const translateJson = await translateRes.json();
-    const translated = translateJson?.data?.translated_text ?? content;
+    const isVideo = body.media_kind === "video";
+    const displayBody = content || (mediaUrls.length > 0 ? (isVideo ? "[视频]" : "[图片]") : "");
+
+    let translated = content;
+    if (content) {
+      const translateRes = await fetch(`${getEnv("SUPABASE_URL")}/functions/v1/translate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getEnv("SUPABASE_ANON_KEY")}`,
+        },
+        body: JSON.stringify({
+          text: content,
+          source_lang: userLang,
+          target_lang: contactLang,
+        }),
+      });
+      const translateJson = await translateRes.json();
+      translated = translateJson?.data?.translated_text ?? content;
+    } else {
+      translated = "";
+    }
 
     let telnyxMessageId: string | null = null;
     try {
@@ -129,6 +149,7 @@ Deno.serve(async (req) => {
         to: normalizePhone(contactPhone),
         text: translated,
         ...(messagingProfileId ? { messaging_profile_id: messagingProfileId } : {}),
+        ...(mediaUrls.length > 0 ? { media_urls: mediaUrls } : {}),
       });
       telnyxMessageId = sendRes.telnyxMessageId;
     } catch (sendErr) {
@@ -136,20 +157,22 @@ Deno.serve(async (req) => {
       throw new Error(humanizeTelnyxSendMessageError(raw));
     }
 
+    const msgType = mediaUrls.length > 0 ? (isVideo ? "video" : "image") : "text";
     const { data: msg, error: msgErr } = await admin
       .from("messages")
       .insert({
         conversation_id: conversationId,
         user_id: user.id,
         direction: "outbound",
-        message_type: "text",
-        body: content,
-        original_content: content,
-        translated_content: translated,
+        message_type: msgType,
+        body: displayBody,
+        original_content: content || displayBody,
+        translated_content: translated || null,
         original_language: userLang,
         translated_language: contactLang,
         status: "sent",
         ...(telnyxMessageId ? { external_message_id: telnyxMessageId } : {}),
+        ...(mediaUrls[0] ? { media_url: mediaUrls[0] } : {}),
       })
       .select()
       .single();
