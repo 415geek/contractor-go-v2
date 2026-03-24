@@ -122,13 +122,15 @@ Deno.serve(async (req) => {
     const translateJson = await translateRes.json();
     const translated = translateJson?.data?.translated_text ?? content;
 
+    let telnyxMessageId: string | null = null;
     try {
-      await telnyxSendSmsWithProfileRepair(getEnv("TELNYX_API_KEY"), {
+      const sendRes = await telnyxSendSmsWithProfileRepair(getEnv("TELNYX_API_KEY"), {
         from: fromDid,
         to: normalizePhone(contactPhone),
         text: translated,
         ...(messagingProfileId ? { messaging_profile_id: messagingProfileId } : {}),
       });
+      telnyxMessageId = sendRes.telnyxMessageId;
     } catch (sendErr) {
       const raw = sendErr instanceof Error ? sendErr.message : String(sendErr);
       throw new Error(humanizeTelnyxSendMessageError(raw));
@@ -147,7 +149,10 @@ Deno.serve(async (req) => {
         original_language: userLang,
         translated_language: contactLang,
         status: "sent",
+        ...(telnyxMessageId ? { external_message_id: telnyxMessageId } : {}),
       })
+      .select()
+      .single();
       .select()
       .single();
 

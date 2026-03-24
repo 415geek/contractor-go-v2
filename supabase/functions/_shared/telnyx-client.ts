@@ -281,16 +281,19 @@ export async function telnyxWaitNumberOrderSuccess(
   throw new Error("Telnyx 号码订购超时，请稍后在控制台查看订单状态");
 }
 
+export type TelnyxSendSmsResult = { telnyxMessageId: string | null };
+
 export async function telnyxSendSms(
   apiKey: string,
   params: { from: string; to: string; text: string; messaging_profile_id?: string },
-): Promise<void> {
+): Promise<TelnyxSendSmsResult> {
   const from = params.from.startsWith("+") ? params.from : normalizeToE164US(params.from);
   const to = params.to.startsWith("+") ? params.to : normalizeToE164US(params.to);
   const body: Record<string, unknown> = {
     from,
     to,
     text: params.text,
+    type: "SMS",
   };
   if (params.messaging_profile_id) {
     body.messaging_profile_id = params.messaging_profile_id;
@@ -309,6 +312,9 @@ export async function telnyxSendSms(
   if (!res.ok) {
     throw new Error(telnyxErrorMessage(json));
   }
+  const mid = (json as { data?: { id?: string } }).data?.id;
+  const telnyxMessageId = typeof mid === "string" && mid.trim() ? mid.trim() : null;
+  return { telnyxMessageId };
 }
 
 /** Telnyx 报错：from 与 Messaging Profile 不匹配（可尝试 PATCH 号码绑定后重发）。 */
@@ -374,9 +380,9 @@ export async function telnyxAttachPhoneToMessagingProfile(
 export async function telnyxSendSmsWithProfileRepair(
   apiKey: string,
   params: { from: string; to: string; text: string; messaging_profile_id?: string },
-): Promise<void> {
+): Promise<TelnyxSendSmsResult> {
   try {
-    await telnyxSendSms(apiKey, params);
+    return await telnyxSendSms(apiKey, params);
   } catch (e) {
     const raw = e instanceof Error ? e.message : String(e);
     const mp = params.messaging_profile_id;
@@ -385,7 +391,7 @@ export async function telnyxSendSmsWithProfileRepair(
     }
     console.warn("[telnyx] SMS profile mismatch, attaching number then retry once:", raw);
     await telnyxAttachPhoneToMessagingProfile(apiKey, params.from, mp);
-    await telnyxSendSms(apiKey, params);
+    return await telnyxSendSms(apiKey, params);
   }
 }
 

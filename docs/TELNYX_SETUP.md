@@ -8,7 +8,7 @@
 2. **Messaging Profile**（美国短信/长码）：  
    [Messaging → Messaging profiles](https://portal.telnyx.com/) 创建 Profile，配置 **Webhook URL** 为：  
    `https://<PROJECT_REF>.supabase.co/functions/v1/voip-webhook`  
-   事件需包含 **`message.received`**（Inbound）。
+   事件建议同时勾选 **`message.received`**（入站）与 **`message.finalized`**（出站送达终态：`delivered` / `delivery_failed` 等）。后者用于回写 App 内消息状态并排查「API 成功但对方收不到」。
 3. 在 Profile 中关联 **10DLC Campaign**（美国本地号发短信通常需要，见 [10DLC 快速开始](https://developers.telnyx.com/docs/messaging/10dlc/quickstart/index)）。
 4. 购号时可选：将 **Messaging Profile ID**（控制台里该 Profile 的 **UUID**，形如 `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`）写入 Supabase Secret `TELNYX_MESSAGING_PROFILE_ID`，新号码会自动绑定该 Profile。  
    **不要**把 `TELNYX_API_KEY`（以 `KEY` 开头）填进此项，否则会报 `Invalid Messaging Profile ID`。
@@ -32,6 +32,14 @@
 | 发短信 | `POST /v2/messages` | [Send a message](https://developers.telnyx.com/api-reference/messages/send-a-message.md) |
 | 按号码查 ID / 绑定短信 Profile | `GET /v2/phone_numbers`、`PATCH /v2/phone_numbers/{id}/messaging` | `send-message` 自动修复（**不可**再 PATCH 根路径写 `messaging_profile_id`） |
 | 入站短信 | Webhook `message.received` | [Receiving Webhooks](https://developers.telnyx.com/docs/messaging/messages/receiving-webhooks) |
+| 出站送达结果 | Webhook `message.finalized` | 同上；需与 `voip-webhook` 同一 URL |
+
+### 入站正常、出站对方收不到（美国长码）
+
+常见原因不是 App 代码，而是 **运营商侧策略**：
+
+- 美国 **10DLC**：长码发美国手机号通常必须把号码挂到已审核的 **Brand + Campaign**，否则 Telnyx API 可能仍返回成功，但下游 **delivery_failed** 或用户侧「永远收不到」。请在 Telnyx 控制台核对 **TCR / 10DLC** 与号码绑定，并查看该条短信的 **`message.finalized`** 里 `to[].status` 与 `errors`（如 [Telnyx 错误码说明](https://developers.telnyx.com/docs/messaging/messages/error-codes)）。
+- 在 **Messaging → Logs** 里用 `send-message` 写入的 **`external_message_id`（Telnyx message id）** 对照日志最直观。
 
 ## 4. 部署
 
