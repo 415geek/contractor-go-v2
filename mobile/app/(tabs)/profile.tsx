@@ -122,7 +122,7 @@ export default function ProfileScreen() {
           iconColor: "#2563EB",
           iconBg: "bg-primary-500/15",
           label: "联系客服",
-          onPress: () => {},
+          onPress: () => router.push("/contact"),
         },
         {
           icon: "star-outline",
@@ -141,7 +141,14 @@ export default function ProfileScreen() {
           iconColor: "#94A3B8",
           iconBg: "bg-slate-500/15",
           label: "用户协议",
-          onPress: () => {},
+          onPress: () => router.push("/terms"),
+        },
+        {
+          icon: "mail-outline",
+          iconColor: "#94A3B8",
+          iconBg: "bg-slate-500/15",
+          label: "联系我们",
+          onPress: () => router.push("/contact"),
         },
         {
           icon: "shield-outline",

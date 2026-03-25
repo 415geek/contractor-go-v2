@@ -274,6 +274,18 @@ export default function LandingScreen() {
             >
               <Text className="text-[15px] text-primary-400">{t.loginBtn}</Text>
             </Pressable>
+
+            <View className="mt-10 flex-row flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-surface-border pt-8">
+              <Pressable onPress={() => router.push("/privacy")} accessibilityRole="link">
+                <Text className="text-[13px] text-ink-tertiary underline">隐私政策</Text>
+              </Pressable>
+              <Pressable onPress={() => router.push("/terms")} accessibilityRole="link">
+                <Text className="text-[13px] text-ink-tertiary underline">服务条款</Text>
+              </Pressable>
+              <Pressable onPress={() => router.push("/contact")} accessibilityRole="link">
+                <Text className="text-[13px] text-ink-tertiary underline">联系我们</Text>
+              </Pressable>
+            </View>
           </View>
         </Animated.View>
       </ScrollView>
